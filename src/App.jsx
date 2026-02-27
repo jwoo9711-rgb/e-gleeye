@@ -18,6 +18,9 @@ const App = () => {
 
     // 카메라 상태 관리
     const [activeCam, setActiveCam] = useState(defaultActiveCam);
+
+    // 실시간 시계 상태 관리
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [gridCams, setGridCams] = useState(initialGridCams);
 
     // 알림 상태 관리
@@ -33,6 +36,14 @@ const App = () => {
             document.documentElement.classList.remove('dark');
         }
     }, [isDark]);
+
+    // 시간 1초마다 업데이트
+    useEffect(() => {
+        const timeInterval = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timeInterval);
+    }, []);
 
     // 데모용: 처음 접속하고 5초 뒤에 오른쪽 아래 토스트 알림 띄우기
     useEffect(() => {
@@ -107,7 +118,9 @@ const App = () => {
                             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
                             <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                                 <span className="material-symbols-outlined text-sm">schedule</span>
-                                <span className="text-sm font-mono font-bold">2023-10-27 14:52:10</span>
+                                <span className="text-sm font-mono font-bold">
+                                    {currentTime.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\. /g, '-').replace('.', '')}
+                                </span>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -264,19 +277,18 @@ const App = () => {
                             <button className="text-[10px] text-slate-500 hover:text-primary underline">더보기</button>
                         </div>
                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px]">
-                            {/* Logs list omitted for brevity, kept essential ones */}
-                            <div className="flex items-start gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-l-2 border-slate-300">
-                                <span className="text-[10px] font-mono text-slate-500 mt-0.5">[14:50:45]</span>
+                            <div className="flex items-start gap-3 p-2 rounded-lg bg-danger/5 border-l-2 border-danger">
+                                <span className="text-[10px] font-mono text-danger font-bold mt-0.5">[14:52:10]</span>
                                 <div>
-                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">CAM-01 차량 진입</p>
-                                    <p className="text-[10px] text-slate-500">차량번호: 12가 3456</p>
+                                    <p className="text-xs font-bold text-danger">CAM-05 화재 감지됨</p>
+                                    <p className="text-[10px] text-slate-500">객체 식별: Flame (94.2%)</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-l-2 border-slate-300">
-                                <span className="text-[10px] font-mono text-slate-500 mt-0.5">[14:40:02]</span>
+                            <div className="flex items-start gap-3 p-2 rounded-lg bg-warning/5 border-l-2 border-warning">
+                                <span className="text-[10px] font-mono text-warning font-bold mt-0.5">[14:45:10]</span>
                                 <div>
-                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">시스템 자가 진단 완료</p>
-                                    <p className="text-[10px] text-slate-500">모든 카메라 정상 작동 중</p>
+                                    <p className="text-xs font-bold text-warning">CAM-05 연기 감지됨</p>
+                                    <p className="text-[10px] text-slate-500">창고 A구역 미세 연기</p>
                                 </div>
                             </div>
                         </div>
