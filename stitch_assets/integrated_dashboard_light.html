@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
+                        "danger": "#ef4444",
+                        "success": "#22c55e",
+                        "warning": "#f59e0b"
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>E-gle Eye 통합 관제 대시보드</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-3">
+<div class="max-w-[1920px] mx-auto flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="flex items-center justify-center size-10 rounded-lg bg-primary text-white">
+<span class="material-symbols-outlined text-2xl">visibility</span>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight">E-gle Eye <span class="text-primary">통합 관제 대시보드</span></h1>
+
+</div>
+</div>
+<div class="flex items-center gap-8">
+<div class="hidden md:flex items-center gap-6">
+<nav class="flex items-center gap-6">
+<a class="text-sm font-semibold text-primary" href="#">대시보드</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" href="#">카메라 목록</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" href="#">로그 데이터</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" href="#">통계 분석</a>
+</nav>
+<div class="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-sm font-mono font-bold">2023-10-27 14:52:10</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-danger rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined">dark_mode</span>
+</button><button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="size-9 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden border border-slate-200 dark:border-slate-800">
+<img class="w-full h-full object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzM04oFAezpu8zoht4vmH9GRSR4qzT-UO5-I_xJWX9-G-s0oW-FRMWYAnjtR0HjiYtIgCJNoFnhal7KPZD_qR1p1-vRymci7t31g7Jm-3zVVu03L6ieCizx17bnxELDLVUnjAkSEBYsgEqSjJuBCnsyjFk5g8JhRL8wugOhAoXH2moGBLO-Mt_jRPgcTfhFLZiZDtlDmB87f1v9ttKR5CyFcRlxS_uSHvT2W9rtN7zgujEfvLARfT7nNTyHHAkEAE2r4TiVRHOiwU"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1920px] mx-auto p-6 flex flex-col lg:flex-row gap-6">
+<!-- Main Area Left (75%) -->
+<section class="lg:w-3/4 flex flex-col gap-6">
+<!-- Large Main Camera Feed -->
+<div class="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden shadow-2xl group border-4 border-danger/40">
+<img class="w-full h-full object-cover opacity-80" data-alt="Factory interior warehouse surveillance feed" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw"/>
+<!-- AI Overlays (Bounding Boxes) -->
+<div class="absolute top-1/4 left-1/3 w-48 h-48 border-2 border-danger flex flex-col">
+<div class="bg-danger text-white text-[10px] font-bold px-1 py-0.5 self-start flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">local_fire_department</span>
+                        FIRE 94.2%
+                    </div>
+</div>
+<div class="absolute inset-0 pointer-events-none border border-white/10"></div>
+<!-- Camera Overlay Info -->
+<div class="absolute top-4 left-4 flex items-center gap-2">
+<span class="bg-black/60 text-white px-3 py-1 rounded-md text-xs font-bold backdrop-blur-md flex items-center gap-2 border border-white/20">
+<span class="size-2 rounded-full bg-danger animate-pulse"></span>
+                        LIVE: CAM-05 - 메인 물류 창고 A구역
+                    </span>
+<span class="bg-black/60 text-white px-3 py-1 rounded-md text-xs font-mono backdrop-blur-md border border-white/20">
+                        14:52:10
+                    </span>
+</div>
+<!-- Camera Controls -->
+<div class="absolute bottom-4 right-4 flex gap-2">
+<button class="p-2 bg-black/60 text-white rounded-lg backdrop-blur-md hover:bg-black/80 transition-colors">
+<span class="material-symbols-outlined text-sm">fullscreen</span>
+</button>
+<button class="p-2 bg-black/60 text-white rounded-lg backdrop-blur-md hover:bg-black/80 transition-colors">
+<span class="material-symbols-outlined text-sm">videocam</span>
+</button>
+</div>
+</div>
+<!-- Grid of Smaller Previews -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<!-- Camera Cards Loop -->
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="Security camera view of parking lot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuO6yejcR_OvplKhCtYeqc6dqtG-xGygg5VL87SGSoo4ygwpNUmtr1RsrD0WbjoHTqUGMhM8iFDAW5R4LARUFPz-1LQ2OuwN7lpJEiGJi_9V9SXx0v01fFaec82hvLzuaWyTE4BddkZWBNeBK0bc_9kQ2ghTizRyVvWJ7Eyuk1JDXVEgonPR7SkosRwRogF0cdTd4IHtCvEnc3DPZrfPr5FSCgB00t99ebQr2icGO4RozZjRrDjtmZOLLVIzqnR5Y3TUbPBSYGXi4"/>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">CAM-01</span>
+<span class="text-[10px] font-medium text-white/80">정문 주차장</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:08</span>
+</div>
+</div>
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="Security camera view of office lobby" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABmKNqT0wgVs66Djrmja8pp63xOWxTa9zOZc-y6F7q-UgceGlK0aYl13MnjSOTBqm9svvB4WF9R-Bu0fD19B0t2VcU4RTIMtPPv0WaGdpiRHGM5yo1hXwute0X2bE8kOvLIKvnpCaubPX9B2ad421PK8pmMkBxzaDZ6DjmpcVbHt2GWAdGz46DT8T0Nsl11FMUXjsps3pRD6fj84gjab8dwVl-XuapJpUuGu1ruq5Ei8JWa8d7iHVqvYWClQlX-CZhLzcNnWDIsKM"/>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">CAM-02</span>
+<span class="text-[10px] font-medium text-white/80">로비 데스크</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:07</span>
+</div>
+</div>
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="Security camera view of construction site" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY8knZ0WAd1E20p6l4DbFzBqoqPo8ECLyQAERSrfiNUW5t9rAURFem2XspR8rGHzX65la00Uh_lNKAHXtLgo68NmAQ6AhO1PaHZNAulG3jw3RQl7BqrEkIhuEsN6ttmu9gi-SWinXpGpr0zXsXRmV2dTD9VCMBFCiRyFuSDz11phAYjdRmfoCLQIR5FQOW8MLWYqy2xg71b_-NxAX0Wk43yFonWgeEFlxVgYdfta498nQKmAZjrI08zSjU9fqZMVQh52zkZjjk8aw"/>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">CAM-03</span>
+<span class="text-[10px] font-medium text-white/80">자재 하역장</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:09</span>
+</div>
+</div>
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="Security camera view of server room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXTuQ15QCfoHzR6qe_TUqRTR9P2W3_6J5lbDE1ZrGxtoY9OM7q7GpLDQtLbzRJmovz8V5jWBj38OuY2B4qbtpJSbYMAkWKEOXrvH7TvndO5v5XeBp69CqSWZT22BQ8cvv3MlY4cDCW8N9rEAU3PxbbHMxuAdAMYMApp6GeXp23gFMk1F5fktFuyBZcGN7pb3_EuNMRJYDJAYbG1J_Y9PnltLSS0WmB_5yoQZ5PUezcWNDelEJIq4612npsSFpgpo7yEGOEhLBGIUM"/>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">CAM-04</span>
+<span class="text-[10px] font-medium text-white/80">데이터 센터</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:10</span>
+</div>
+</div>
+<!-- CAM-05 is the main feed, but we repeat it in grid as reference or show as active -->
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border-2 border-primary">
+<img class="w-full h-full object-cover" data-alt="Factory interior surveillance preview" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBA0r2_Q0NF8bwpHixEExHGfETe-inEEck8YRMyh8GhjwTt5E7sucp5MYbvb9V09JyWm94_7HYM-EP4iaAW1iXpbz_xbEQZ1lZ-5n4iXz2ne4FJRF5Z2B0M1QGvRM8wp6BCqd39N9EPUhTXBPXHl_VltrR1v_6TFqV5A_1jPIeYDIgBoomtyMNNThkYlnc2LTb6oQgW1qJOSoOpTD6YQ4dpnLtbDD5QxiIGCIrXO2M3T64x4lEhpcVgDE-xr04ElB2mvJHV4Bz-6q8"/>
+<div class="absolute inset-0 bg-primary/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-primary px-1.5 py-0.5 rounded uppercase">ACTIVE CAM-05</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:10</span>
+</div>
+</div>
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="Security camera view of outdoor gym area" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy5JH2olA84oezMtWcRQwG1x1noYAJQEX07QG9LVazkk-xd9wvgGGPEC6dJtq2SsLUvsMqbbk_RExhequCBJ5b_eF-Q76o6RVPgqagotFhh17ePyJKWWpK1PHRhWhz7XAh0c6jVgPGUQpBbCIInp6_23Cltn5LxFo1C2xAX-J_f2iT-d6IPdR4lxQFOq5xyk2gRaZ-9VE5GWM_zWE6QagYytHX4H8kjzKbJ9b5D12cTrvYx2Ny-34Yk7KwEbU7ziZryF9E447nnoI"/>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">CAM-06</span>
+<span class="text-[10px] font-medium text-white/80">직원 휴게실</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:05</span>
+</div>
+</div>
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="Security camera view of hallway" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZR4h0i7Ie70UVhA9JEU4Zu0W3ES5P4ejblahA4TfIxZmEI0jVJR0BmgLhHcUop03waPAExuiLkAfrM9g5Yt_6NZqAuYMl7FjWLr0d6wpA1nXfCUVlkYwUVMQoVmSbObQAFsNyS69zo-hviYvk1PcH-BXtx72exGt77mQaacXPXAy0vE1IZBnlERSiT40CY46YYpnu6Jm2-SfmrogNyU0PFfb4NIgM8IoewgAJjNIhtXuu3ZDhGvce0Jxd3KFxtRTzn-wAc_O-OFA"/>
+<div class="absolute inset-0 bg-black/20"></div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">CAM-07</span>
+<span class="text-[10px] font-medium text-white/80">3층 복도 B</span>
+</div>
+<div class="absolute bottom-2 right-2">
+<span class="text-[10px] font-mono text-white/90">14:52:04</span>
+</div>
+</div>
+<div class="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 opacity-60 grayscale">
+<div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900">
+<span class="material-symbols-outlined text-slate-400">videocam_off</span>
+</div>
+<div class="absolute top-2 left-2 flex flex-col gap-1">
+<span class="text-[10px] font-bold text-white bg-slate-500 px-1.5 py-0.5 rounded">CAM-08</span>
+<span class="text-[10px] font-medium text-slate-400">후문 입구 (오프라인)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Area Right (25%) -->
+<aside class="lg:w-1/4 flex flex-col gap-6">
+<!-- AI Analysis Panel -->
+<div class="bg-white dark:bg-background-dark/50 rounded-xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col gap-6 shadow-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-bold text-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                        실시간 AI 분석
+                    </h2>
+<span class="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full uppercase">Monitoring</span>
+</div>
+<!-- Gauge -->
+<div class="flex flex-col items-center justify-center py-2">
+<div class="relative size-32 flex items-center justify-center">
+<svg class="size-full -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-slate-100 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" stroke-width="3"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="94, 100" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="text-2xl font-black text-slate-900 dark:text-white">94%</span>
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">신뢰도</span>
+</div>
+</div>
+</div>
+<!-- Window Frame Analysis -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<p class="text-xs font-bold text-slate-600 dark:text-slate-400">5초 윈도우 프레임 분석</p>
+<p class="text-[10px] text-primary font-bold">EVENT DETECTED</p>
+</div>
+<div class="flex gap-1.5 h-8">
+<div class="flex-1 bg-success rounded-sm opacity-60"></div>
+<div class="flex-1 bg-success rounded-sm opacity-60"></div>
+<div class="flex-1 bg-success rounded-sm opacity-60"></div>
+<div class="flex-1 bg-success rounded-sm opacity-80"></div>
+<div class="flex-1 bg-danger rounded-sm animate-pulse"></div>
+<div class="flex-1 bg-danger rounded-sm"></div>
+<div class="flex-1 bg-danger rounded-sm"></div>
+<div class="flex-1 bg-danger rounded-sm opacity-90"></div>
+<div class="flex-1 bg-danger rounded-sm opacity-80"></div>
+<div class="flex-1 bg-danger rounded-sm opacity-70"></div>
+</div>
+</div>
+<!-- Risk Trend Chart -->
+<div class="flex flex-col gap-3">
+<p class="text-xs font-bold text-slate-600 dark:text-slate-400">위험 지수 추세 (최근 1시간)</p>
+<div class="h-24 flex items-end gap-1 px-1">
+<div class="w-full bg-primary/20 h-1/4 rounded-t-sm"></div>
+<div class="w-full bg-primary/20 h-1/3 rounded-t-sm"></div>
+<div class="w-full bg-primary/20 h-1/5 rounded-t-sm"></div>
+<div class="w-full bg-primary/40 h-2/5 rounded-t-sm"></div>
+<div class="w-full bg-primary/40 h-1/2 rounded-t-sm"></div>
+<div class="w-full bg-primary/60 h-3/4 rounded-t-sm"></div>
+<div class="w-full bg-danger h-full rounded-t-sm"></div>
+<div class="w-full bg-danger h-4/5 rounded-t-sm"></div>
+</div>
+</div>
+<!-- Emergency Button -->
+<button class="w-full py-4 bg-danger hover:bg-danger/90 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-danger/20 transition-all active:scale-95">
+<span class="material-symbols-outlined">report_problem</span>
+                    긴급 보고 (Fire Alert)
+                </button>
+</div>
+<!-- Event Log Panel -->
+<div class="flex-1 bg-white dark:bg-background-dark/50 rounded-xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-sm min-h-[300px]">
+<div class="flex items-center justify-between">
+<h2 class="font-bold text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-500 text-sm">list_alt</span>
+                        최근 이벤트 로그
+                    </h2>
+<button class="text-[10px] text-slate-500 hover:text-primary underline">더보기</button>
+</div>
+<div class="flex flex-col gap-2 overflow-y-auto max-h-[400px]">
+<div class="flex items-start gap-3 p-2 rounded-lg bg-danger/5 border-l-2 border-danger">
+<span class="text-[10px] font-mono text-danger font-bold mt-0.5">[14:52:10]</span>
+<div>
+<p class="text-xs font-bold text-danger">CAM-05 화재 감지됨</p>
+<p class="text-[10px] text-slate-500">객체 식별: Flame (94.2%)</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-l-2 border-slate-300">
+<span class="text-[10px] font-mono text-slate-500 mt-0.5">[14:50:45]</span>
+<div>
+<p class="text-xs font-semibold text-slate-700 dark:text-slate-200">CAM-01 차량 진입</p>
+<p class="text-[10px] text-slate-500">차량번호: 12가 3456</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg bg-warning/5 border-l-2 border-warning">
+<span class="text-[10px] font-mono text-warning font-bold mt-0.5">[14:48:12]</span>
+<div>
+<p class="text-xs font-bold text-warning">CAM-04 비인가 접근</p>
+<p class="text-[10px] text-slate-500">데이터센터 서버실</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-l-2 border-slate-300">
+<span class="text-[10px] font-mono text-slate-500 mt-0.5">[14:45:10]</span>
+<div>
+<p class="text-xs font-semibold text-slate-700 dark:text-slate-200">CAM-05 연기 감지됨</p>
+<p class="text-[10px] text-slate-500">창고 A구역 미세 연기</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border-l-2 border-slate-300">
+<span class="text-[10px] font-mono text-slate-500 mt-0.5">[14:40:02]</span>
+<div>
+<p class="text-xs font-semibold text-slate-700 dark:text-slate-200">시스템 자가 진단 완료</p>
+<p class="text-[10px] text-slate-500">모든 카메라 정상 작동 중</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<footer class="max-w-[1920px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-200 dark:border-slate-800">
+<p>© 2023 E-gle Eye Security Systems. All Rights Reserved.</p>
+<div class="flex gap-4">
+<a class="hover:text-primary" href="#">개인정보처리방침</a>
+<a class="hover:text-primary" href="#">시스템 이용약관</a>
+<a class="hover:text-primary" href="#">고객센터</a>
+</div>
+</footer>
+</body></html>

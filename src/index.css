@@ -1,0 +1,5 @@
+/* CSS 설정을 비워 버전 충돌을 막습니다. 모든 디자인은 index.html의 CDN이 처리합니다. */
+body {
+  margin: 0;
+  padding: 0;
+}
