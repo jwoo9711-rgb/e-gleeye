@@ -53,24 +53,15 @@ const App = () => {
         return () => clearTimeout(timer);
     }, []);
 
-    // 1. 그리드 카메라 클릭 시 메인 카메라와 스왑
+    // 1. 그리드 카메라 클릭 시 메인 카메라로 설정 (그리드 순서 고정)
     const handleCamSwap = (clickedCam, index) => {
-        const newGridCams = [...gridCams];
-        newGridCams[index] = activeCam; // 기존 메인캠을 그리드 자리로
-        setGridCams(newGridCams);
         setActiveCam(clickedCam); // 클릭한 캠을 메인캠으로 설정
     };
 
-    // 2. 알림창에서 '확인'을 눌렀을 때, 화재가 발생한 캠을 메인캠으로 강제 전환
+    // 2. 알림창에서 '확인'을 눌렀을 때, 화재가 발생한 캠을 메인캠으로 설정 (그리드 순서 고정)
     const handleEmergencySwap = () => {
-        // CAM-08을 찾아서 메인으로 스왑
+        // CAM-08을 찾아서 메인으로 표시
         const targetId = 'CAM-08';
-        if (activeCam.id === targetId) {
-            // 이미 메인캠이면 모달과 토스트만 닫기
-            setShowModal(false);
-            setShowToast(false);
-            return;
-        }
 
         const targetIndex = gridCams.findIndex(cam => cam.id === targetId);
         if (targetIndex !== -1) {
@@ -85,7 +76,7 @@ const App = () => {
             };
 
             const newGridCams = [...gridCams];
-            newGridCams[targetIndex] = activeCam;
+            newGridCams[targetIndex] = updatedAlertCam; // 그리드의 해당 카메라 상태 반영
             setGridCams(newGridCams);
             setActiveCam(updatedAlertCam);
         }
@@ -95,7 +86,31 @@ const App = () => {
     };
 
     return (
-        <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen relative">
+        <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen relative overflow-x-hidden">
+            <style>
+                {`
+                @keyframes siren {
+                    0%, 100% { background-color: rgba(239, 68, 68, 0); }
+                    50% { background-color: rgba(239, 68, 68, 0.25); }
+                }
+                .animate-siren {
+                    animation: siren 0.8s infinite;
+                }
+                @keyframes pulse-border {
+                    0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+                    50% { border-color: #fca5a5; box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0.4); }
+                }
+                .animate-pulse-border {
+                    animation: pulse-border 1s infinite;
+                }
+                `}
+            </style>
+
+            {/* Emergency Siren Overlay */}
+            {(showModal || showToast) && (
+                <div className="fixed inset-0 z-[95] pointer-events-none animate-siren"></div>
+            )}
+
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-3">
                 <div className="max-w-[1920px] mx-auto flex items-center justify-between">
@@ -322,68 +337,88 @@ const App = () => {
 
             {/* Main Alert Modal Popup */}
             {showModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border-4 border-danger overflow-hidden">
-                        <div className="p-6">
-                            <div className="flex items-start justify-between mb-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-14 rounded-full bg-danger flex items-center justify-center text-white">
-                                        <span className="material-symbols-outlined text-3xl">report</span>
-                                    </div>
-                                    <div>
-                                        <h2 className="text-2xl font-black text-slate-900 dark:text-white">CAM-08에서 화재 감지!</h2>
-                                        <p className="text-danger font-bold text-sm tracking-tight">즉각적인 주의 필요</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 transition-colors">
-                                    <span className="material-symbols-outlined">close</span>
-                                </button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-red-950/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.5)] border-[6px] border-danger overflow-hidden animate-pulse-border">
+                        <div className="bg-danger text-white py-4 px-8 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="material-symbols-outlined text-4xl animate-bounce">warning</span>
+                                <h2 className="text-3xl font-black tracking-tighter">EMERGENCY: FIRE DETECTED</h2>
                             </div>
-                            <div className="flex flex-col md:flex-row gap-6 mb-8">
-                                <div className="flex-1 space-y-6">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">탐지유형</p>
-                                        <p className="text-lg font-bold text-slate-800 dark:text-slate-100">화재 / 연기 탐지</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">AI 신뢰도</p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-danger w-[82%]"></div>
-                                            </div>
-                                            <span className="text-sm font-black text-danger">82%</span>
+                            <button onClick={() => setShowModal(false)} className="hover:bg-white/20 p-2 rounded-full transition-colors">
+                                <span className="material-symbols-outlined text-2xl">close</span>
+                            </button>
+                        </div>
+
+                        <div className="p-8">
+                            <div className="flex flex-col lg:flex-row gap-8">
+                                <div className="flex-1 space-y-8">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">탐지 장소</p>
+                                            <p className="text-xl font-black text-slate-800 dark:text-slate-100">CAM-08 후문 입구</p>
+                                        </div>
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">위험 등급</p>
+                                            <p className="text-xl font-black text-danger">CRITICAL (LV. 4)</p>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="relative w-full md:w-64 aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
-                                    <img alt="Detection Frame" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw" />
-                                    <div className="absolute inset-0 border-2 border-danger m-8">
-                                        <div className="absolute -top-6 left-0 bg-danger text-white text-[8px] font-bold px-1 py-0.5">객체: 연기</div>
+
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-xs font-bold text-slate-500 uppercase">AI 분석 신뢰도</p>
+                                            <span className="text-xl font-black text-danger">82%</span>
+                                        </div>
+                                        <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
+                                            <div className="h-full bg-danger w-[82%] relative">
+                                                <div className="absolute inset-0 bg-white/30 animate-[shimmer_2s_infinite]"></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded flex items-center gap-1">
-                                        <span className="size-1.5 rounded-full bg-danger animate-pulse"></span>
-                                        <span className="text-[8px] font-mono text-white">CAM_08_REC</span>
+
+                                    <div className="bg-danger/5 border-2 border-danger/20 p-4 rounded-xl">
+                                        <h3 className="text-sm font-bold text-danger mb-2 flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm">info</span>
+                                            권장 조치 사항
+                                        </h3>
+                                        <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
+                                            <li className="flex items-center gap-2">• 즉시 현장 보안 요원 출동 지시</li>
+                                            <li className="flex items-center gap-2">• 건물 내 화재 경보 알람 활성화 검토</li>
+                                            <li className="flex items-center gap-2">• 소방서(119) 자동 신고 시스템 확인</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className="relative w-full lg:w-[400px] aspect-video lg:aspect-square rounded-2xl overflow-hidden border-4 border-danger/30 shadow-2xl">
+                                    <img alt="Detection Frame" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw" />
+                                    <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
+                                    <div className="absolute top-4 left-4 bg-danger text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-pulse">
+                                        DETECTED: SMOKE/FLAME
+                                    </div>
+                                    <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/20">
+                                        <span className="size-2 rounded-full bg-danger animate-ping"></span>
+                                        <span className="text-[10px] font-mono font-bold text-white tracking-widest">CAM_08_REC</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex gap-3">
-                                <button onClick={handleEmergencySwap} className="flex-1 py-4 bg-danger hover:bg-danger/90 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-danger/20 transition-all active:scale-[0.98]">
-                                    <span className="material-symbols-outlined">fullscreen</span>
-                                    확인 및 메인 뷰 전환
+
+                            <div className="mt-8 flex gap-4">
+                                <button onClick={handleEmergencySwap} className="flex-[2] py-5 bg-danger hover:bg-red-600 text-white rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(239,68,68,0.4)] transition-all active:scale-[0.97] hover:-translate-y-1">
+                                    <span className="material-symbols-outlined text-3xl">fullscreen</span>
+                                    현장 상황 즉시 관제
                                 </button>
-                                <button onClick={() => setShowModal(false)} className="px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-                                    Dismiss
+                                <button onClick={() => setShowModal(false)} className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-bold text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700">
+                                    무시하기
                                 </button>
                             </div>
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-medium">
-                            <div className="flex items-center gap-1">
-                                <span className="material-symbols-outlined text-xs">schedule</span>
-                                탐지 시간: 14:22:04 (현지 시간)
+
+                        <div className="bg-slate-900 px-8 py-3 flex items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+                            <div className="flex items-center gap-2 text-danger">
+                                <span className="material-symbols-outlined text-xs animate-spin">sync</span>
+                                AI 실시간 분석 엔진 가동 중
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="size-1 rounded-full bg-danger animate-pulse"></span>
-                                실시간 데이터 전송 중
+                            <div>
+                                EVENT ID: ER-2024-001 | TIME: 14:22:04
                             </div>
                         </div>
                     </div>
