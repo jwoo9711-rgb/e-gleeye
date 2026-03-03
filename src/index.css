@@ -1,4 +1,25 @@
-/* CSS 설정을 비워 버전 충돌을 막습니다. 모든 디자인은 index.html의 CDN이 처리합니다. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .animate-fast-pulse {
+    animation: fast-pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes fast-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .3; }
+  }
+
+  .animate-siren {
+    animation: siren 1.5s ease-in-out infinite;
+  }
+  @keyframes siren {
+    0%, 100% { background-color: rgba(244, 67, 54, 0.1); }
+    50% { background-color: rgba(255, 255, 255, 0.1); }
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
