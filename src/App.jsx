@@ -74,7 +74,6 @@ const App = () => {
     // 화재 경보 트리거 함수 (데모나 수동 발동용)
     const triggerFireAlert = () => {
         setIsAlertActive(true);
-        setShowToast(true);
 
         // CAM-08의 상태를 'danger'로 업데이트
         const updatedGrid = [...gridCams];
@@ -402,7 +401,7 @@ const App = () => {
             </style>
 
             {/* Emergency Siren Overlay */}
-            {(showModal || showToast) && (
+            {isAlertActive && (
                 <div className="fixed inset-0 z-[95] pointer-events-none animate-siren"></div>
             )}
 

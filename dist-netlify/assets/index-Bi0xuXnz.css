@@ -1,0 +1,1 @@
+@tailwind base;@tailwind components;@tailwind utilities;@layer utilities{.animate-fast-pulse{animation:fast-pulse .5s cubic-bezier(.4,0,.6,1) infinite}@keyframes fast-pulse{0%,to{opacity:1}50%{opacity:.3}}.animate-siren{animation:siren 1.5s ease-in-out infinite}@keyframes siren{0%,to{background-color:#f443361a}50%{background-color:#ffffff1a}}}body{margin:0;padding:0}
