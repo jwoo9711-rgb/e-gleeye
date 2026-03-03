@@ -800,145 +800,102 @@ const App = () => {
                                 <span className="material-symbols-outlined text-sm">close</span>
                             </button>
                         </div>
-                                            <li className="flex items-center gap-2">• 건물 내 화재 경보 알람 활성화 검토</li>
-                                            <li className="flex items-center gap-2">• 소방서(119) 자동 신고 시스템 확인</li>
-                                        </ul>
-                                    </div>
-                                </div>
 
-                                <div className="relative w-full lg:w-[400px] aspect-video lg:aspect-square rounded-2xl overflow-hidden border-4 border-danger/30 shadow-2xl">
-                                    <img alt="Detection Frame" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw" />
-                                    <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
-                                    <div className="absolute top-4 left-4 bg-danger text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-pulse">
-                                        DETECTED: SMOKE/FLAME
-                                    </div>
-                                    <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/20">
-                                        <span className="size-2 rounded-full bg-danger animate-ping"></span>
-                                        <span className="text-[10px] font-mono font-bold text-white tracking-widest">CAM_08_REC</span>
-                                    </div>
-                                </div>
-                            </div >
-
-    <div className="mt-8 flex gap-4">
-        <button onClick={handleEmergencySwap} className="flex-[2] py-5 bg-danger hover:bg-red-600 text-white rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(239,68,68,0.4)] transition-all active:scale-[0.97] hover:-translate-y-1">
-            <span className="material-symbols-outlined text-3xl">fullscreen</span>
-            현장 상황 즉시 관제
-        </button>
-        <button onClick={() => setShowModal(false)} className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-bold text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700">
-            무시하기
-        </button>
-    </div>
-                        </div >
-
-    <div className="bg-slate-900 px-8 py-3 flex items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-        <div className="flex items-center gap-2 text-danger">
-            <span className="material-symbols-outlined text-xs animate-spin">sync</span>
-            AI 실시간 분석 엔진 가동 중
-        </div>
-        <div>
-            EVENT ID: ER-2024-001 | TIME: 14:22:04
-        </div>
-=======
-                        <div className="mt-3 px-2 py-1 bg-slate-100 dark:bg-slate-700 w-full text-center rounded flex items-center justify-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-300">
-            <span className="material-symbols-outlined text-[12px]">fullscreen</span>
-            화면 자세히 보기 (클릭)
->>>>>>> Stashed changes
-        </div>
-    </div>
+                    </div>
                 ))}
             </div >
 
-    <footer className="max-w-[1920px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-200 dark:border-slate-800 pb-24">
-        <p>© 2023 E-gle Eye Security Systems. All Rights Reserved.</p>
-        <div className="flex gap-4">
-            <a className="hover:text-primary" href="#">개인정보처리방침</a>
-            <a className="hover:text-primary" href="#">시스템 이용약관</a>
-            <a className="hover:text-primary" href="#">고객센터</a>
-        </div>
-    </footer>
+            <footer className="max-w-[1920px] mx-auto px-6 py-4 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-200 dark:border-slate-800 pb-24">
+                <p>© 2023 E-gle Eye Security Systems. All Rights Reserved.</p>
+                <div className="flex gap-4">
+                    <a className="hover:text-primary" href="#">개인정보처리방침</a>
+                    <a className="hover:text-primary" href="#">시스템 이용약관</a>
+                    <a className="hover:text-primary" href="#">고객센터</a>
+                </div>
+            </footer>
 
-{/* 🔥 전체화면 모달 오버레이 🔥 */ }
-{
-    isFullscreen && fullscreenCam && (
-        <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center backdrop-blur-md">
-            <div className="absolute top-6 right-6 z-10 flex gap-4">
-                {fullscreenCam.status === 'danger' && (
-                    <div className="bg-danger text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-danger/50 animate-pulse border-2 border-white/20">
-                        <span className="material-symbols-outlined">warning</span> 위험 상황 감지
+            {/* 🔥 전체화면 모달 오버레이 🔥 */}
+            {
+                isFullscreen && fullscreenCam && (
+                    <div className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center backdrop-blur-md">
+                        <div className="absolute top-6 right-6 z-10 flex gap-4">
+                            {fullscreenCam.status === 'danger' && (
+                                <div className="bg-danger text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-danger/50 animate-pulse border-2 border-white/20">
+                                    <span className="material-symbols-outlined">warning</span> 위험 상황 감지
+                                </div>
+                            )}
+                            <button
+                                onClick={() => handleDoubleClick()}
+                                className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-all border border-white/30"
+                            >
+                                <span className="material-symbols-outlined">close_fullscreen</span>
+                                전체화면 종료 (ESC)
+                            </button>
+                        </div>
+
+                        <div
+                            onDoubleClick={() => handleDoubleClick()}
+                            className="w-full aspect-video mx-auto max-h-[90vh] bg-black relative cursor-pointer group shadow-2xl border-2 border-white/10 rounded-xl overflow-hidden"
+                        >
+                            <img className="w-full h-full object-cover" alt="Fullscreen Feed" src={fullscreenCam.src} />
+
+                            {/* Information Overlay in Fullscreen */}
+                            <div className="absolute top-6 left-6 flex flex-col gap-2">
+                                <span className="bg-black/60 text-white px-4 py-2 rounded-lg text-lg font-bold backdrop-blur-md flex items-center gap-3 border border-white/20">
+                                    {getStatusIndicator(fullscreenCam.status)}
+                                    LIVE: {fullscreenCam.id} - {fullscreenCam.name}
+                                </span>
+                                <span className="bg-black/60 text-white px-3 py-1 w-fit rounded-lg text-sm font-mono backdrop-blur-md border border-white/20">
+                                    {currentTime.toLocaleTimeString('ko-KR', { hour12: false })}
+                                </span>
+                            </div>
+
+                            {/* Bounding Box if danger/warning in fullscreen */}
+                            {fullscreenCam.status === 'danger' && (
+                                <div className={getBoundingBoxStyles(fullscreenCam.id, 'danger')}>
+                                    <div className="absolute -top-10 left-0 bg-danger text-white text-lg font-bold px-4 py-1 whitespace-nowrap">
+                                        Fire: {aiConfidence}%
+                                    </div>
+                                </div>
+                            )}
+                            {fullscreenCam.status === 'warning' && (
+                                <div className={getBoundingBoxStyles(fullscreenCam.id, 'warning')}>
+                                    <div className="absolute -top-10 left-0 bg-warning text-white text-lg font-bold px-4 py-1 whitespace-nowrap">
+                                        Smoke: {aiConfidence}%
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}
-                <button
-                    onClick={() => handleDoubleClick()}
-                    className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-all border border-white/30"
-                >
-                    <span className="material-symbols-outlined">close_fullscreen</span>
-                    전체화면 종료 (ESC)
+                )
+            }
+
+            {/* 🔥 플로팅 시연용 컨트롤러 (화면 하단 중앙 고정) */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border border-white/30 dark:border-slate-700 rounded-full px-6 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-3">
+                <div className="flex items-center justify-center bg-primary text-white size-8 rounded-full shadow-inner mr-2">
+                    <span className="material-symbols-outlined text-[16px]">science</span>
+                </div>
+                <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mr-1"></div>
+
+                <button onClick={handleSimNormal} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
+                    🟢 정상 모드
+                </button>
+                <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+                <button onClick={handleSimSmoke} className="px-4 py-2 bg-warning/10 hover:bg-warning/20 text-warning border border-warning/30 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
+                    🟡 연기 감지
+                </button>
+                <button onClick={handleSimFire} className="px-4 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
+                    🔴 화재 발생
+                </button>
+                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
+                <button onClick={handleSimFalseAlarm} className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-400 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
+                    ❓ 오탐지
+                </button>
+                <button onClick={handleSimMultiFire} className="px-4 py-2 bg-black border border-danger text-danger hover:bg-danger hover:text-white rounded-full text-xs font-black uppercase transition-all shadow-lg animate-pulse hover:-translate-y-0.5">
+                    다중 화재
                 </button>
             </div>
-
-            <div
-                onDoubleClick={() => handleDoubleClick()}
-                className="w-full aspect-video mx-auto max-h-[90vh] bg-black relative cursor-pointer group shadow-2xl border-2 border-white/10 rounded-xl overflow-hidden"
-            >
-                <img className="w-full h-full object-cover" alt="Fullscreen Feed" src={fullscreenCam.src} />
-
-                {/* Information Overlay in Fullscreen */}
-                <div className="absolute top-6 left-6 flex flex-col gap-2">
-                    <span className="bg-black/60 text-white px-4 py-2 rounded-lg text-lg font-bold backdrop-blur-md flex items-center gap-3 border border-white/20">
-                        {getStatusIndicator(fullscreenCam.status)}
-                        LIVE: {fullscreenCam.id} - {fullscreenCam.name}
-                    </span>
-                    <span className="bg-black/60 text-white px-3 py-1 w-fit rounded-lg text-sm font-mono backdrop-blur-md border border-white/20">
-                        {currentTime.toLocaleTimeString('ko-KR', { hour12: false })}
-                    </span>
-                </div>
-
-                {/* Bounding Box if danger/warning in fullscreen */}
-                {fullscreenCam.status === 'danger' && (
-                    <div className={getBoundingBoxStyles(fullscreenCam.id, 'danger')}>
-                        <div className="absolute -top-10 left-0 bg-danger text-white text-lg font-bold px-4 py-1 whitespace-nowrap">
-                            Fire: {aiConfidence}%
-                        </div>
-                    </div>
-                )}
-                {fullscreenCam.status === 'warning' && (
-                    <div className={getBoundingBoxStyles(fullscreenCam.id, 'warning')}>
-                        <div className="absolute -top-10 left-0 bg-warning text-white text-lg font-bold px-4 py-1 whitespace-nowrap">
-                            Smoke: {aiConfidence}%
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-}
-
-{/* 🔥 플로팅 시연용 컨트롤러 (화면 하단 중앙 고정) */ }
-<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border border-white/30 dark:border-slate-700 rounded-full px-6 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center gap-3">
-    <div className="flex items-center justify-center bg-primary text-white size-8 rounded-full shadow-inner mr-2">
-        <span className="material-symbols-outlined text-[16px]">science</span>
-    </div>
-    <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mr-1"></div>
-
-    <button onClick={handleSimNormal} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
-        🟢 정상 모드
-    </button>
-    <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mx-1"></div>
-
-    <button onClick={handleSimSmoke} className="px-4 py-2 bg-warning/10 hover:bg-warning/20 text-warning border border-warning/30 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
-        🟡 연기 감지
-    </button>
-    <button onClick={handleSimFire} className="px-4 py-2 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
-        🔴 화재 발생
-    </button>
-    <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
-    <button onClick={handleSimFalseAlarm} className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-400 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
-        ❓ 오탐지
-    </button>
-    <button onClick={handleSimMultiFire} className="px-4 py-2 bg-black border border-danger text-danger hover:bg-danger hover:text-white rounded-full text-xs font-black uppercase transition-all shadow-lg animate-pulse hover:-translate-y-0.5">
-        다중 화재
-    </button>
-</div>
         </div >
     );
 };
