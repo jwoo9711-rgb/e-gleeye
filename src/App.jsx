@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // 카메라 초기 데이터 셋
 const defaultActiveCam = { id: 'CAM-05', name: '메인 물류 창고 A구역', time: '14:52:10', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw', isOffline: false };
@@ -26,6 +26,18 @@ const App = () => {
     // 알림 상태 관리
     const [showToast, setShowToast] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [toastMessages, setToastMessages] = useState([]);
+
+    // AI 영상 분석 연동 상태 관리 (Python FastAPI 버젼)
+    const [isAiRunning, setIsAiRunning] = useState(false);
+    const [youtubeUrl, setYoutubeUrl] = useState('');
+    const [aiData, setAiData] = useState({
+        probability: 0,
+        ewma: 0,
+        fireCount: 0,
+        status: 'NORMAL'
+    });
+    const aiIntervalRef = useRef(null);
 
     useEffect(() => {
         if (isDark) {
@@ -84,6 +96,104 @@ const App = () => {
         setShowModal(false);
         setShowToast(false);
     };
+
+    // --- Python FastAPI 연동 로직 시작 ---
+    const API_ENDPOINT = "http://localhost:8000/analyze";
+
+    const fetchAiData = async () => {
+        if (!youtubeUrl.trim()) return;
+
+        try {
+            // FastAPI는 Query 파라미터로 URL을 받음
+            const res = await fetch(`${API_ENDPOINT}?video_url=${encodeURIComponent(youtubeUrl)}`);
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+
+            // 응답 파싱
+            if (data && data.status) {
+                const probability = parseFloat(data.probability || 0);
+                const confidencePercent = Math.round(probability * 100);
+                const backendStatus = data.status; // "!!! EMERGENCY: FIRE !!!", "WARNING: CHECKING...", "NORMAL"
+
+                setAiData({
+                    probability: confidencePercent,
+                    ewma: Math.round(parseFloat(data.ewma || 0) * 100),
+                    fireCount: data.fire_count || 0,
+                    status: backendStatus
+                });
+
+                // 확률/상태에 따른 UI 동작
+                if (backendStatus.includes('EMERGENCY') || probability >= 0.70) {
+                    setActiveCam(prev => ({ ...prev, status: 'danger' }));
+                    setShowToast(true);
+
+                    if (!toastMessages.some(t => t.id === 'ai-danger')) {
+                        setToastMessages(prev => [{
+                            id: 'ai-danger',
+                            camId: 'YT-STREAM',
+                            title: '긴급: AI 화재 감지됨!',
+                            desc: `Python 모델이 화재를 확정했습니다 (${confidencePercent}%)`,
+                            icon: 'local_fire_department',
+                            iconColor: 'bg-red-500 text-white'
+                        }, ...prev]);
+                    }
+                } else if (backendStatus.includes('WARNING') || probability >= 0.40) {
+                    setActiveCam(prev => ({ ...prev, status: 'warning' }));
+                } else {
+                    setActiveCam(prev => ({ ...prev, status: 'normal' }));
+                    setShowToast(false);
+                }
+            }
+        } catch (error) {
+            console.error("Python API Error:", error);
+        }
+    };
+
+    const toggleAiAnalysis = () => {
+        if (!youtubeUrl.trim()) {
+            alert("유튜브 동영상 링크를 먼저 입력해주세요!");
+            return;
+        }
+
+        if (isAiRunning) {
+            clearInterval(aiIntervalRef.current);
+            setIsAiRunning(false);
+            setShowToast(false);
+            setActiveCam(prev => ({ ...prev, status: 'normal' }));
+        } else {
+            setIsAiRunning(true);
+
+            // UI를 유튜브 모드로 전환 (새로운 캠 생성)
+            const ytCamId = "YT-" + Math.random().toString(36).substr(2, 4).toUpperCase();
+            setActiveCam({
+                id: ytCamId,
+                name: '유튜브 실시간 스트림 분석',
+                time: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+                src: '', // 유튜브는 src를 빈 상태로 두고 UI에서 iframe으로 처리할 수 있음
+                isOffline: false,
+                status: 'normal',
+                isYoutube: true,
+                youtubeUrl: youtubeUrl
+            });
+
+            // 첫 프레임 즉각 분석
+            fetchAiData();
+
+            // 잠시 뒤 2초 간격으로 polling
+            // (1초 간격은 유튜브 다운로드 오버헤드 때문에 파이썬 서버가 버거울 수 있어 2초로 안전거리 확보)
+            aiIntervalRef.current = setInterval(() => {
+                fetchAiData();
+            }, 2500);
+        }
+    };
+
+    // 컴포넌트 언마운트 시 인터벌 해제
+    useEffect(() => {
+        return () => {
+            if (aiIntervalRef.current) clearInterval(aiIntervalRef.current);
+        }
+    }, []);
 
     return (
         <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen relative overflow-x-hidden">
@@ -165,11 +275,20 @@ const App = () => {
                 {/* Main Area Left (75%) */}
                 <section className="lg:w-3/4 flex flex-col gap-6">
                     {/* Large Main Camera Feed */}
-                    <div className="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden shadow-2xl group border-4 border-slate-700 dark:border-slate-800 transition-all duration-500">
+                    <div className={`relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden shadow-2xl group border-4 transition-all duration-500 ${activeCam.status === 'danger' ? 'border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]' : activeCam.status === 'warning' ? 'border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.3)]' : 'border-slate-700 dark:border-slate-800'}`}>
                         {activeCam.isOffline ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 opacity-60 grayscale">
                                 <span className="material-symbols-outlined text-slate-400 text-6xl">videocam_off</span>
                             </div>
+                        ) : activeCam.isYoutube ? (
+                            <iframe
+                                className="w-full h-full object-cover opacity-90 transition-all pointer-events-none"
+                                src={`https://www.youtube.com/embed/${activeCam.youtubeUrl.split('v=')[1]?.split('&')[0] || ''}?autoplay=1&mute=1&controls=0&loop=1`}
+                                title="YouTube video player"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
                         ) : (
                             <img className="w-full h-full object-cover opacity-90 transition-all" alt="Active Feed" src={activeCam.src} />
                         )}
@@ -243,10 +362,17 @@ const App = () => {
                             <div className="relative size-32 flex items-center justify-center">
                                 <svg className="size-full -rotate-90" viewBox="0 0 36 36">
                                     <circle className="stroke-slate-100 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" strokeWidth="3"></circle>
-                                    <circle className="stroke-primary" cx="18" cy="18" fill="none" r="16" strokeDasharray="94, 100" strokeLinecap="round" strokeWidth="3"></circle>
+                                    <circle
+                                        className={`${isAiRunning ? (aiData.probability >= 70 ? 'stroke-danger' : aiData.probability >= 40 ? 'stroke-warning' : 'stroke-success') : 'stroke-slate-300 dark:stroke-slate-700'} transition-all duration-500`}
+                                        cx="18" cy="18" fill="none" r="16"
+                                        strokeDasharray={`${isAiRunning ? aiData.probability : 0}, 100`}
+                                        strokeLinecap="round" strokeWidth="3"
+                                    ></circle>
                                 </svg>
                                 <div className="absolute flex flex-col items-center">
-                                    <span className="text-2xl font-black text-slate-900 dark:text-white">94%</span>
+                                    <span className={`text-2xl font-black ${isAiRunning ? (aiData.probability >= 70 ? 'text-danger' : aiData.probability >= 40 ? 'text-warning' : 'text-success') : 'text-slate-400'}`}>
+                                        {isAiRunning ? `${aiData.probability}%` : '---'}
+                                    </span>
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">신뢰도</span>
                                 </div>
                             </div>
@@ -272,14 +398,59 @@ const App = () => {
                             </div>
                         </div>
 
-                        {/* Emergency Test Button (To manually trigger the alarm) */}
-                        <button
-                            onClick={() => setShowToast(true)}
-                            className="w-full py-4 bg-danger hover:bg-danger/90 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-danger/20 transition-all active:scale-95"
-                        >
-                            <span className="material-symbols-outlined">report_problem</span>
-                            수동 알림 테스트 (화재)
-                        </button>
+                        {/* AI Video Analysis Controls */}
+                        <div className="flex flex-col gap-3 mt-2">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span className="material-symbols-outlined text-slate-400 text-sm">link</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="분석할 유튜브 동영상 링크 입력..."
+                                    value={youtubeUrl}
+                                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                                    disabled={isAiRunning}
+                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-700 dark:text-slate-300 disabled:opacity-50"
+                                />
+                            </div>
+
+                            <button
+                                onClick={toggleAiAnalysis}
+                                disabled={!youtubeUrl.trim() && !isAiRunning}
+                                className={`w-full py-4 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${(!youtubeUrl.trim() && !isAiRunning)
+                                    ? 'bg-slate-400 cursor-not-allowed'
+                                    : isAiRunning
+                                        ? 'bg-danger hover:bg-danger/90 shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse'
+                                        : 'bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+                                    }`}
+                            >
+                                <span className="material-symbols-outlined">
+                                    {isAiRunning ? 'stop_circle' : 'play_circle'}
+                                </span>
+                                {isAiRunning ? 'AI 분석 중지' : '유튜브 유튜브 실시간 감지 시작'}
+                            </button>
+
+                            {/* Detailed Stats Appears only when AI is active */}
+                            {isAiRunning && (
+                                <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-slate-500">EWMA (보정치)</span>
+                                        <span className="font-mono">{aiData.ewma}%</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-bold text-slate-500">누적 화재 프레임</span>
+                                        <span className="font-mono">{aiData.fireCount} frames</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-slate-500">서버 판단 상태</span>
+                                        <span className={`font-mono font-bold ${aiData.status.includes('EMERGENCY') ? 'text-danger flex items-center gap-1' : ''}`}>
+                                            {aiData.status.includes('EMERGENCY') && <span className="material-symbols-outlined text-[10px] animate-ping">priority_high</span>}
+                                            {aiData.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Event Log Panel */}
@@ -292,36 +463,35 @@ const App = () => {
                             <button className="text-[10px] text-slate-500 hover:text-primary underline">더보기</button>
                         </div>
                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px]">
-                            <div className="flex items-start gap-3 p-2 rounded-lg bg-danger/5 border-l-2 border-danger">
-                                <span className="text-[10px] font-mono text-danger font-bold mt-0.5">[14:52:10]</span>
-                                <div>
-                                    <p className="text-xs font-bold text-danger">CAM-05 화재 감지됨</p>
-                                    <p className="text-[10px] text-slate-500">객체 식별: Flame (94.2%)</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3 p-2 rounded-lg bg-warning/5 border-l-2 border-warning">
-                                <span className="text-[10px] font-mono text-warning font-bold mt-0.5">[14:45:10]</span>
-                                <div>
-                                    <p className="text-xs font-bold text-warning">CAM-05 연기 감지됨</p>
-                                    <p className="text-[10px] text-slate-500">창고 A구역 미세 연기</p>
-                                </div>
-                            </div>
+                            {toastMessages.length === 0 ? (
+                                <div className="text-center text-xs text-slate-400 py-4">새로운 이벤트가 없습니다.</div>
+                            ) : (
+                                toastMessages.slice(0, 5).map((log, i) => (
+                                    <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-danger/5 border-l-2 border-danger">
+                                        <span className="text-[10px] font-mono text-danger font-bold mt-0.5">[{new Date().toLocaleTimeString('ko-KR', { hour12: false })}]</span>
+                                        <div>
+                                            <p className="text-xs font-bold text-danger">{log.title}</p>
+                                            <p className="text-[10px] text-slate-500">{log.desc}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </aside>
             </main>
 
             {/* Bottom-right Toast Alert */}
-            {showToast && (
+            {showToast && toastMessages.length > 0 && (
                 <div className="fixed bottom-6 right-6 z-[90] bg-white dark:bg-slate-800 border-l-4 border-danger rounded-xl shadow-2xl p-4 w-80 animate-bounce cursor-pointer"
                     onClick={() => setShowModal(true)}>
                     <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center justify-center size-8 rounded-full bg-danger/10 text-danger">
-                            <span className="material-symbols-outlined">local_fire_department</span>
+                        <div className={`flex items-center justify-center size-8 rounded-full ${toastMessages[0].iconColor || 'bg-danger/10 text-danger'}`}>
+                            <span className="material-symbols-outlined">{toastMessages[0].icon || 'local_fire_department'}</span>
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">화재 위험 탐지!</h4>
-                            <p className="text-xs text-slate-500">CAM-08 (후문 입구)에서 연기 패턴이 식별되었습니다.</p>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">{toastMessages[0].title}</h4>
+                            <p className="text-xs text-slate-500">{toastMessages[0].desc}</p>
                         </div>
                         <button className="text-slate-400 hover:text-danger" onClick={(e) => { e.stopPropagation(); setShowToast(false); }}>
                             <span className="material-symbols-outlined text-sm">close</span>
