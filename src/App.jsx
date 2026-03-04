@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // 카메라 초기 데이터 셋 (status 추가)
 const defaultActiveCam = { id: 'CAM-05', name: '메인 물류 창고 A구역', time: '14:52:10', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw', isOffline: false, status: 'danger' };
@@ -40,6 +40,13 @@ const App = () => {
     // 전체화면 토글 관리
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [fullscreenCam, setFullscreenCam] = useState(null);
+
+    // AI 영상 분석 연동 상태 관리
+    const [isAiRunning, setIsAiRunning] = useState(false);
+    const [uploadedVideoSrc, setUploadedVideoSrc] = useState(null);
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const aiIntervalRef = useRef(null);
 
     useEffect(() => {
         if (isDark) {
@@ -139,8 +146,160 @@ const App = () => {
             ...cam, status: 'normal', name: cam.name.replace(/ \(화재 감지\)| \(연기 감지\)| \(화재 확정\)/g, '')
         }));
         setGridCams(normalGrid);
+
+        // 업로드 비디오를 초기화하지는 않으나, 상태는 초기화
+        if (activeCam.id !== 'CAM-[CUSTOM]') {
+            setActiveCam(normalGrid.find(c => c.id === 'CAM-05'));
+        } else {
+            setActiveCam(prev => ({ ...prev, status: 'normal', name: '업로드된 영상' }));
+        }
+
+        // AI 스레드 중지
+        if (aiIntervalRef.current) clearInterval(aiIntervalRef.current);
+        setIsAiRunning(false);
+
         return normalGrid;
     };
+
+    // --- Azure ML 연동 로직 시작 ---
+    const AZURE_ENDPOINT = "http://0be9559c-dbaa-467c-a59f-387551467a9f.koreacentral.azurecontainer.io/score";
+    const AZURE_KEY = "5T5y73pKpeH8itTa5T7K9OXtZH05RWKn";
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setUploadedVideoSrc(url);
+
+            // 기존 시뮬레이션 초기화
+            resetSimulations();
+
+            const customCam = {
+                id: 'CAM-[CUSTOM]',
+                name: '업로드된 영상',
+                time: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+                src: url,
+                isOffline: false,
+                status: 'normal',
+                isVideo: true
+            };
+
+            setActiveCam(customCam);
+        }
+    };
+
+    const captureFrameAndAnalyze = async () => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+
+        if (!video || !canvas || video.paused || video.ended) return;
+
+        // 캔버스에 비디오 프레임 그리기
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // base64로 변환
+        const base64Data = canvas.toDataURL('image/png');
+
+        try {
+            const payload = {
+                "Inputs": {
+                    "WebServiceInput0": [
+                        {
+                            "image": base64Data,
+                            "id": 0,
+                            "category": ""
+                        }
+                    ]
+                }
+            };
+
+            const res = await fetch(AZURE_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${AZURE_KEY}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+
+            // 응답 파싱
+            const outputInfo = data?.Results?.WebServiceOutput0?.[0] || data?.WebServiceOutput0?.[0];
+            if (outputInfo) {
+                const label = outputInfo["Scored Labels"] || "Negative";
+                const probability = parseFloat(outputInfo["Scored Probabilities_fire"] || 0);
+                const confidencePercent = Math.round(probability * 100);
+
+                setAiConfidence(confidencePercent);
+
+                // 확률에 따른 동작
+                if (probability >= 0.75 || label.toLowerCase() === 'fire') {
+                    setActiveCam(prev => ({ ...prev, status: 'danger', name: '업로드된 영상 (화재 확정)' }));
+                    setIsAlertActive(true);
+
+                    if (!toastMessages.some(t => t.id === 'ai-danger')) {
+                        setToastMessages(prev => [{
+                            id: 'ai-danger',
+                            camId: 'CAM-[CUSTOM]',
+                            title: '긴급: AI 화재 감지됨!',
+                            desc: `Azure ML 모델이 화재를 확정했습니다 (${confidencePercent}%)`,
+                            icon: 'local_fire_department',
+                            iconColor: 'bg-danger text-white border-2 border-white shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-pulse'
+                        }, ...prev]);
+                    }
+                } else if (probability >= 0.40) {
+                    setActiveCam(prev => ({ ...prev, status: 'warning', name: '업로드된 영상 (연기/경계)' }));
+                } else {
+                    setActiveCam(prev => ({ ...prev, status: 'normal', name: '업로드된 영상 (정상)' }));
+                    setIsAlertActive(false);
+                }
+            }
+
+        } catch (error) {
+            console.error("Azure ML API Error:", error);
+            // 에러 발생 시에도 계속 돌아가게 둘지 정지할지 결정
+        }
+    };
+
+    const toggleAiAnalysis = () => {
+        if (isAiRunning) {
+            clearInterval(aiIntervalRef.current);
+            setIsAiRunning(false);
+            resetSimulations();
+        } else {
+            setIsAiRunning(true);
+
+            // 첫 프레임 즉각 분석
+            captureFrameAndAnalyze();
+
+            // 이후 1초(1000ms) 간격으로 지속 캡처 및 전송
+            aiIntervalRef.current = setInterval(() => {
+                captureFrameAndAnalyze();
+            }, 1000);
+
+            // 로거에 시작 기록
+            setEventLogs(prev => [{
+                id: Date.now(),
+                time: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+                type: 'success',
+                cam: 'System',
+                title: 'Azure ML 자동 분석 개시',
+                desc: '1초 단위 캡처 시퀀스 시작'
+            }, ...prev]);
+        }
+    };
+
+    // 컴포넌트 언마운트 시 인터벌 해제
+    useEffect(() => {
+        return () => {
+            if (aiIntervalRef.current) clearInterval(aiIntervalRef.current);
+        }
+    }, []);
 
     // 1. [정상 모드]
     const handleSimNormal = () => {
@@ -470,8 +629,25 @@ const App = () => {
                                     <span className="material-symbols-outlined text-slate-400 text-6xl">videocam_off</span>
                                 </div>
                             ) : (
-                                <img className="w-full h-full object-cover opacity-90 transition-all" alt="Active Feed" src={activeCam.src} />
+                                <>
+                                    {activeCam.isVideo ? (
+                                        <video
+                                            ref={videoRef}
+                                            src={activeCam.src}
+                                            className="w-full h-full object-cover opacity-90 transition-all"
+                                            autoPlay
+                                            loop
+                                            muted
+                                            playsInline
+                                        />
+                                    ) : (
+                                        <img className="w-full h-full object-cover opacity-90 transition-all" alt="Active Feed" src={activeCam.src} />
+                                    )}
+                                </>
                             )}
+
+                            {/* Hidden canvas for frame extraction */}
+                            <canvas ref={canvasRef} style={{ display: 'none' }} />
 
                             <div className="absolute inset-0 pointer-events-none border border-white/10"></div>
 
@@ -874,10 +1050,36 @@ const App = () => {
                 <div className="flex items-center justify-center bg-primary text-white size-8 rounded-full shadow-inner mr-2">
                     <span className="material-symbols-outlined text-[16px]">science</span>
                 </div>
-                <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mr-1"></div>
 
-                <button onClick={handleSimNormal} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
-                    🟢 정상 모드
+                {/* 비디오 업로드 인풋 (히든) */}
+                <input
+                    type="file"
+                    accept="video/*"
+                    id="videoUpload"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                />
+                <label
+                    htmlFor="videoUpload"
+                    className="cursor-pointer px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold transition-all hover:-translate-y-0.5 flex items-center gap-1"
+                >
+                    <span className="material-symbols-outlined text-[14px]">upload_file</span>
+                    동영상 업로드
+                </label>
+
+                {/* AI 작동/중지 버튼 (비디오 업로드 시 활성화 권장) */}
+                <button
+                    onClick={toggleAiAnalysis}
+                    className={`px-4 py-2 text-white rounded-full text-xs font-bold transition-all hover:-translate-y-0.5 flex items-center gap-1 ${isAiRunning ? 'bg-danger animate-pulse' : 'bg-slate-800'}`}
+                >
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    {isAiRunning ? 'AI 분석 중지' : 'AI 실시간 감지'}
+                </button>
+
+                <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+                <button onClick={resetSimulations} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5">
+                    🟢 정상 모드 (리셋)
                 </button>
                 <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 mx-1"></div>
 
