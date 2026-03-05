@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 // 카메라 초기 데이터 셋
-const defaultActiveCam = { id: 'CAM-05', name: '메인 물류 창고 A구역', time: '14:52:10', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw', isOffline: false };
+const defaultActiveCam = { id: 'CAM-05', name: '메인 물류 창고 A구역', time: '14:52:10', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbC-l35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw', isOffline: false };
 
 const initialGridCams = [
     { id: 'CAM-01', name: '정문 주차장', time: '14:52:08', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuO6yejcR_OvplKhCtYeqc6dqtG-xGygg5VL87SGSoo4ygwpNUmtr1RsrD0WbjoHTqUGMhM8iFDAW5R4LARUFPz-1LQ2OuwN7lpJEiGJi_9V9SXx0v01fFaec82hvLzuaWyTE4BddkZWBNeBK0bc_9kQ2ghTizRyVvWJ7Eyuk1JDXVEgonPR7SkosRwRogF0cdTd4IHtCvEnc3DPZrfPr5FSCgB00t99ebQr2icGO4RozZjRrDjtmZOLLVIzqnR5Y3TUbPBSYGXi4', isOffline: false },
-    { id: 'CAM-02', name: '로비 데스크', time: '14:52:07', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABmKNqT0wgVs66Djrmja8pp63xOWxTa9zOZc-y6F7q-UgceGlK0aYl13MnjSOTBqm9svvB4WF9R-Bu0fD19B0t2VcU4RTIMtPPv0WaGdpiRHGM5yo1hXwute0X2bE8kOvLIKvnpCaubPX9B2ad421PK8pmMkBxzaDZ6DjmpcVbHt2GWAdGz46DT8T0Nsl11FMUXjsps3pRD6fj84gjab8dwVl-XuapJpUuGu1ruq5Ei8JWa8d7iHVqvYWClQlX-CZhLzcNnWDIsKM', isOffline: false },
-    { id: 'CAM-03', name: '자재 하역장', time: '14:52:09', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCY8knZ0WAd1E20p6l4DbFzBqoqPo8ECLyQAERSrfiNUW5t9rAURFem2XspR8rGHzX65la00Uh_lNKAHXtLgo68NmAQ6AhO1PaHZNAulG3jw3RQl7BqrEkIhuEsN6ttmu9gi-SWinXpGpr0zXsXRmV2dTD9VCMBFCiRyFuSDz11phAYjdRmfoCLQIR5FQOW8MLWYqy2xg71b_-NxAX0Wk43yFonWgeEFlxVgYdfta498nQKmAZjrI08zSjU9fqZMVQh52zkZjjk8aw', isOffline: false },
+    { id: 'CAM-02', name: '로비 데스크', time: '14:52:07', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABmKNqT0wgVs66Djrmja8pp63xOWtTa9zOZc-y6F7q-UgceGlK0aYl13MnjSOTBqm9svvB4WF9R-Bu0fD19B0t2VcU4RTIMtPPv0WaGdpiRHGM5yo1hXwute0X2bE8kOvLIKvnpCaubPX9B2ad421PK8pmMkBxzaDZ6DjmpcVbHt2GWAdGz46DT8T0Nsl11FMUXjsps3pRD6fj84gjab8dwVl-XuapJpUuGu1ruq5Ei8JWa8d7iHVqvYWClQlX-CZhLzcNnWDIsKM', isOffline: false },
+    { id: 'CAM-03', name: '자재 하역장', time: '14:52:09', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCY8knZ0WAd1E20p6l4DbFzBqo0Po8ECLyQAERSrfiNUW5t9rAURFem2XspR8rGHzX65la00Uh_lNKAHXtLgo68NmAQ6AhO1PaHZNAulG3jw3RQl7BqrEkIhuEsN6ttmu9gi-SWinXpGpr0zXsXRmV2dTD9VCMBFCiRyFuSDz11phAYjdRmfoCLQIR5FQOW8MLWYqy2xg71b_-NxAX0Wk43yFonWgeEFlxVgYdfta498nQKmAZjrI08zSjU9fqZMVQh52zkZjjk8aw', isOffline: false },
     { id: 'CAM-04', name: '데이터 센터', time: '14:52:10', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBXTuQ15QCfoHzR6qe_TUqRTR9P2W3_6J5lbDE1ZrGxtoY9OM7q7GpLDQtLbzRJmovz8V5jWBj38OuY2B4qbtpJSbYMAkWKEOXrvH7TvndO5v5XeBp69CqSWZT22BQ8cvv3MlY4cDCW8N9rEAU3PxbbHMxuAdAMYMApp6GeXp23gFMk1F5fktFuyBZcGN7pb3_EuNMRJYDJAYbG1J_Y9PnltLSS0WmB_5yoQZ5PUezcWNDelEJIq4612npsSFpgpo7yEGOEhLBGIUM', isOffline: false },
     { id: 'CAM-06', name: '직원 휴게실', time: '14:52:05', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBy5JH2olA84oezMtWcRQwG1x1noYAJQEX07QG9LVazkk-xd9wvgGGPEC6dJtq2SsLUvsMqbbk_RExhequCBJ5b_eF-Q76o6RVPgqagotFhh17ePyJKWWpK1PHRhWhz7XAh0c6jVgPGUQpBbCIInp6_23Cltn5LxFo1C2xAX-J_f2iT-d6IPdR4lxQFOq5xyk2gRaZ-9VE5GWM_zWE6QagYytHX4H8kjzKbJ9b5D12cTrvYx2Ny-34Yk7KwEbU7ziZryF9E447nnoI', isOffline: false },
-    { id: 'CAM-07', name: '3층 복도 B', time: '14:52:04', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAZR4h0i7Ie70UVhA9JEU4Zu0W3ES5P4ejblahA4TfIxZmEI0jVJR0BmgLhHcUop03waPAExuiLkAfrM9g5Yt_6NZqAuYMl7FjWLr0d6wpA1nXfCUVlkYwUVMQoVmSbObQAFsNyS69zo-hviYvk1PcH-BXtx72exGt77mQaacXPXAy0vE1IZBnlERSiT40CY46YYpnu6Jm2-SfmrogNyU0PFfb4NIgM8IoewgAJjNIhtXuu3ZDhGvce0Jxd3KFxtRTzn-wAc_O-OFA', isOffline: false },
+    { id: 'CAM-07', name: '3층 복도 B', time: '14:52:04', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAZR4h0i7Ie70UVhA9JEU4Zu0W3ES5P4ejblahA4TfIxZmEI0jVJR0BmgLhHcUop03waPAExuiLkAfrM9g5Yt_6NZqAuYMl7FjWLr0d6wpA1nXfCUVlkYwUVMQoVmSbObQAFnNyS69zo-hviYvk1PcH-BXtx72exGt77mQaacXPXAy0vE1IZBnlERSiT40CY46YYpnu6Jm2-SfmrogNyU0PFfb4NIgM8IoewgAJjNIhtXuu3ZDhGvce0Jxd3KFxtRTzn-wAc_O-OFA', isOffline: false },
     { id: 'CAM-08', name: '후문 입구 (오프라인)', time: '14:52:04', src: '', isOffline: true },
 ];
 
@@ -37,7 +37,14 @@ const App = () => {
         fireCount: 0,
         status: 'NORMAL'
     });
+    const [logData, setLogData] = useState([]);
+
     const aiIntervalRef = useRef(null);
+    const playStartTimeRef = useRef(null);
+    const youtubeUrlRef = useRef(youtubeUrl);
+    useEffect(() => {
+        youtubeUrlRef.current = youtubeUrl;
+    }, [youtubeUrl]);
 
     useEffect(() => {
         if (isDark) {
@@ -51,10 +58,10 @@ const App = () => {
 
     // 시간 1초마다 업데이트
     useEffect(() => {
-        const timeInterval = setInterval(() => {
+        const timer = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
-        return () => clearInterval(timeInterval);
+        return () => clearInterval(timer);
     }, []);
 
 
@@ -91,15 +98,37 @@ const App = () => {
         setShowToast(false);
     };
 
+    // 긴급 알림 해제 처리 로직
+    const handleClearAlert = () => {
+        const updatedGrid = gridCams.map(cam =>
+            cam.id === 'CAM-08' ? { ...cam, status: 'normal' } : cam
+        );
+        setGridCams(updatedGrid);
+
+        if (activeCam.id === 'CAM-08') {
+            const updatedAlertCam = { ...activeCam, status: 'normal' };
+            setActiveCam(updatedAlertCam);
+        }
+
+        setShowModal(false);
+        setShowToast(false);
+    };
+
     // --- Python FastAPI 연동 로직 시작 ---
     const API_ENDPOINT = "http://localhost:8000/analyze";
 
-    const fetchAiData = async () => {
-        if (!youtubeUrl.trim()) return;
+    const fetchAiData = useCallback(async () => {
+        const url = youtubeUrlRef.current;
+        if (!url.trim()) return;
+
+        let playerCurrentTime = 0;
+        if (playStartTimeRef.current) {
+            playerCurrentTime = (Date.now() - playStartTimeRef.current) / 1000;
+        }
 
         try {
-            // FastAPI는 Query 파라미터로 URL을 받음
-            const res = await fetch(`${API_ENDPOINT}?video_url=${encodeURIComponent(youtubeUrl)}`);
+            // FastAPI는 Query 파라미터로 URL과 time을 받음
+            const res = await fetch(`${API_ENDPOINT}?video_url=${encodeURIComponent(url)}&time=${playerCurrentTime}&playing=true`);
 
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
@@ -114,27 +143,42 @@ const App = () => {
                     probability: confidencePercent,
                     ewma: Math.round(parseFloat(data.ewma || 0) * 100),
                     fireCount: data.fire_count || 0,
-                    status: backendStatus
+                    status: backendStatus,
+                    status_code: data.status_code || 0,
+                    timestamp: data.timestamp || new Date().toLocaleTimeString(),
+                    history: data.history || []
                 });
+
+                setLogData(prev => [...prev, {
+                    timestamp: data.timestamp || new Date().toLocaleTimeString(),
+                    status: backendStatus,
+                    probability: confidencePercent,
+                    fireCount: data.fire_count || 0,
+                    ewma: Math.round(parseFloat(data.ewma || 0) * 100)
+                }]);
 
                 // 확률/상태에 따른 UI 동작
                 let newStatus = 'normal';
 
-                if (backendStatus.includes('EMERGENCY') || probability >= 0.70) {
+                if (backendStatus.includes('EMERGENCY') || data.status_code >= 2 || probability >= 0.70) {
                     newStatus = 'danger';
                     setShowToast(true);
 
-                    if (!toastMessages.some(t => t.id === 'ai-danger')) {
-                        setToastMessages(prev => [{
-                            id: 'ai-danger',
+                    setToastMessages(prev => {
+                        if (prev.length > 0 && prev[0].title.includes('AI 화재 감지') && prev[0].data_prob === confidencePercent) {
+                            return prev;
+                        }
+                        return [{
+                            id: Date.now().toString(),
                             camId: 'CAM-08',
                             title: '긴급: AI 화재 감지됨!',
                             desc: `Python 모델이 화재를 확정했습니다 (${confidencePercent}%)`,
                             icon: 'local_fire_department',
-                            iconColor: 'bg-red-500 text-white'
-                        }, ...prev]);
-                    }
-                } else if (backendStatus.includes('WARNING') || probability >= 0.40) {
+                            iconColor: 'bg-red-500 text-white',
+                            data_prob: confidencePercent
+                        }, ...prev];
+                    });
+                } else if (backendStatus.includes('WARNING') || data.status_code === 1 || probability >= 0.40) {
                     newStatus = 'warning';
                 } else {
                     newStatus = 'normal';
@@ -151,7 +195,7 @@ const App = () => {
         } catch (error) {
             console.error("Python API Error:", error);
         }
-    };
+    }, []);
 
     const toggleAiAnalysis = () => {
         if (!youtubeUrl.trim()) {
@@ -163,9 +207,11 @@ const App = () => {
             clearInterval(aiIntervalRef.current);
             setIsAiRunning(false);
             setShowToast(false);
+            playStartTimeRef.current = null;
             setActiveCam(prev => ({ ...prev, status: 'normal' }));
         } else {
             setIsAiRunning(true);
+            playStartTimeRef.current = Date.now();
 
             // UI를 유튜브 모드로 전환 (CAM-08 메인으로 설정)
             const targetCamId = "CAM-08";
@@ -199,6 +245,30 @@ const App = () => {
             if (aiIntervalRef.current) clearInterval(aiIntervalRef.current);
         }
     }, []);
+
+    const downloadCSV = useCallback((e) => {
+        e.preventDefault();
+        if (logData.length === 0) {
+            alert("다운로드할 로그 데이터가 없습니다.");
+            return;
+        }
+
+        const headers = ["Timestamp", "Status", "Probability(%)", "Fire_Count", "EWMA(%)"];
+        const csvContent = [
+            headers.join(","),
+            ...logData.map(log => `${log.timestamp},"${log.status}",${log.probability},${log.fireCount},${log.ewma}`)
+        ].join("\n");
+
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `egle_eye_log_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, [logData]);
 
     return (
         <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen relative overflow-x-hidden">
@@ -242,7 +312,7 @@ const App = () => {
                             <nav className="flex items-center gap-6">
                                 <a className="text-sm font-semibold text-primary" href="#">대시보드</a>
                                 <a className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" href="#">카메라 목록</a>
-                                <a className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" href="#">로그 데이터</a>
+                                <button onClick={downloadCSV} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors cursor-pointer">로그 데이터</button>
                                 <a className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" href="#">통계 분석</a>
                             </nav>
                             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
@@ -390,20 +460,22 @@ const App = () => {
                         {/* Window Frame Analysis */}
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">5초 윈도우 프레임 분석</p>
-                                <p className="text-[10px] text-primary font-bold">ALL CLEAR</p>
+                                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">8프레임 윈도우 분석</p>
+                                <p className={`text-[10px] font-bold ${aiData.history?.includes('fire') ? 'text-danger' : 'text-primary'}`}>
+                                    {aiData.history?.includes('fire') ? 'DETECTED' : 'ALL CLEAR'}
+                                </p>
                             </div>
                             <div className="flex gap-1.5 h-8">
-                                <div className="flex-1 bg-success rounded-sm opacity-60"></div>
-                                <div className="flex-1 bg-success rounded-sm opacity-60"></div>
-                                <div className="flex-1 bg-success rounded-sm opacity-60"></div>
-                                <div className="flex-1 bg-success rounded-sm opacity-80"></div>
-                                <div className="flex-1 bg-success rounded-sm"></div>
-                                <div className="flex-1 bg-success rounded-sm"></div>
-                                <div className="flex-1 bg-success rounded-sm"></div>
-                                <div className="flex-1 bg-success rounded-sm opacity-90"></div>
-                                <div className="flex-1 bg-success rounded-sm opacity-80"></div>
-                                <div className="flex-1 bg-success rounded-sm opacity-70"></div>
+                                {Array.from({ length: 8 }).map((_, idx) => {
+                                    const historyList = aiData.history || [];
+                                    const item = historyList[idx];
+                                    const hasData = item !== undefined;
+                                    const isFire = item === 'fire';
+
+                                    return (
+                                        <div key={idx} className={`flex-1 rounded-sm opacity-80 transition-colors duration-300 ${!isAiRunning ? 'bg-slate-200 dark:bg-slate-700' : (hasData ? (isFire ? 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-success') : 'bg-slate-200 dark:bg-slate-700')}`}></div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -534,21 +606,21 @@ const App = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">탐지 장소</p>
-                                            <p className="text-xl font-black text-slate-800 dark:text-slate-100">CAM-08 후문 입구</p>
+                                            <p className="text-xl font-black text-slate-800 dark:text-slate-100">{activeCam.name}</p>
                                         </div>
                                         <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">위험 등급</p>
-                                            <p className="text-xl font-black text-danger">CRITICAL (LV. 4)</p>
+                                            <p className="text-xl font-black text-danger">{aiData.probability >= 70 ? 'CRITICAL (LV. 4)' : aiData.probability >= 40 ? 'WARNING (LV. 2)' : 'NORMAL'}</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
                                             <p className="text-xs font-bold text-slate-500 uppercase">AI 분석 신뢰도</p>
-                                            <span className="text-xl font-black text-danger">82%</span>
+                                            <span className="text-xl font-black text-danger">{aiData.probability}%</span>
                                         </div>
                                         <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
-                                            <div className="h-full bg-danger w-[82%] relative">
+                                            <div className="h-full bg-danger relative" style={{ width: `${aiData.probability}%` }}>
                                                 <div className="absolute inset-0 bg-white/30 animate-[shimmer_2s_infinite]"></div>
                                             </div>
                                         </div>
@@ -567,15 +639,19 @@ const App = () => {
                                     </div>
                                 </div>
 
-                                <div className="relative w-full lg:w-[400px] aspect-video lg:aspect-square rounded-2xl overflow-hidden border-4 border-danger/30 shadow-2xl">
-                                    <img alt="Detection Frame" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw" />
+                                <div className="relative w-full lg:w-[400px] aspect-video lg:aspect-square rounded-2xl overflow-hidden border-4 border-danger/30 shadow-2xl bg-slate-900 flex items-center justify-center">
+                                    {activeCam.isYoutube ? (
+                                        <span className="material-symbols-outlined text-red-500 text-6xl animate-pulse">youtube_activity</span>
+                                    ) : (
+                                        <img alt="Detection Frame" className="w-full h-full object-cover" src={activeCam.src || 'https://lh3.googleusercontent.com/aida-public/AB6AXuD6mvhsFVbX8M0YzqSmpAp_uT5lWHjqXVZzZKI1udODesBd2zs8NZFJeKc-BPzFszurL5i_xImpcww7GYf_hcWxcxF4f6MsPTbCl35HCEBMZwVMStB7RWkW22hYdR1H9KBOdO52tPeLsbQ9yVow8Pfw4WalBJtmzvr3-PeFFNUX5fKjC8IUi8vAa10psW6ILxkI16W4KIa6D04B7rr-Op9xgy73qrefAjlKCI4bAwxXXodXDSaG_00YVKQoB56Y1x4vTeBphGkFuRw'} />
+                                    )}
                                     <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
                                     <div className="absolute top-4 left-4 bg-danger text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-pulse">
                                         DETECTED: SMOKE/FLAME
                                     </div>
                                     <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/20">
                                         <span className="size-2 rounded-full bg-danger animate-ping"></span>
-                                        <span className="text-[10px] font-mono font-bold text-white tracking-widest">CAM_08_REC</span>
+                                        <span className="text-[10px] font-mono font-bold text-white tracking-widest">{activeCam.id}_REC</span>
                                     </div>
                                 </div>
                             </div>
@@ -597,7 +673,7 @@ const App = () => {
                                 AI 실시간 분석 엔진 가동 중
                             </div>
                             <div>
-                                EVENT ID: ER-2024-001 | TIME: 14:22:04
+                                EVENT ID: ER-2024-001 | TIME: {aiData.timestamp || currentTime.toLocaleTimeString()}
                             </div>
                         </div>
                     </div>
