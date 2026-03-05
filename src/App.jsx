@@ -57,13 +57,7 @@ const App = () => {
         return () => clearInterval(timeInterval);
     }, []);
 
-    // 데모용: 처음 접속하고 5초 뒤에 오른쪽 아래 토스트 알림 띄우기
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowToast(true);
-        }, 5000);
-        return () => clearTimeout(timer);
-    }, []);
+
 
     // 1. 그리드 카메라 클릭 시 메인 카메라로 설정 (그리드 순서 고정)
     const handleCamSwap = (clickedCam, index) => {
@@ -124,14 +118,16 @@ const App = () => {
                 });
 
                 // 확률/상태에 따른 UI 동작
+                let newStatus = 'normal';
+
                 if (backendStatus.includes('EMERGENCY') || probability >= 0.70) {
-                    setActiveCam(prev => ({ ...prev, status: 'danger' }));
+                    newStatus = 'danger';
                     setShowToast(true);
 
                     if (!toastMessages.some(t => t.id === 'ai-danger')) {
                         setToastMessages(prev => [{
                             id: 'ai-danger',
-                            camId: 'YT-STREAM',
+                            camId: 'CAM-08',
                             title: '긴급: AI 화재 감지됨!',
                             desc: `Python 모델이 화재를 확정했습니다 (${confidencePercent}%)`,
                             icon: 'local_fire_department',
@@ -139,11 +135,18 @@ const App = () => {
                         }, ...prev]);
                     }
                 } else if (backendStatus.includes('WARNING') || probability >= 0.40) {
-                    setActiveCam(prev => ({ ...prev, status: 'warning' }));
+                    newStatus = 'warning';
                 } else {
-                    setActiveCam(prev => ({ ...prev, status: 'normal' }));
+                    newStatus = 'normal';
                     setShowToast(false);
                 }
+
+                setActiveCam(prev => ({ ...prev, status: newStatus }));
+
+                // 그리드 캠에도 상태 동기화 (외곽선 표시 등)
+                setGridCams(prevGrid => prevGrid.map(cam =>
+                    cam.isYoutube ? { ...cam, status: newStatus } : cam
+                ));
             }
         } catch (error) {
             console.error("Python API Error:", error);
@@ -164,18 +167,20 @@ const App = () => {
         } else {
             setIsAiRunning(true);
 
-            // UI를 유튜브 모드로 전환 (새로운 캠 생성)
-            const ytCamId = "YT-" + Math.random().toString(36).substr(2, 4).toUpperCase();
-            setActiveCam({
-                id: ytCamId,
+            // UI를 유튜브 모드로 전환 (CAM-08 메인으로 설정)
+            const targetCamId = "CAM-08";
+            const updatedCam8 = {
+                ...gridCams.find(c => c.id === targetCamId),
                 name: '유튜브 실시간 스트림 분석',
-                time: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
-                src: '', // 유튜브는 src를 빈 상태로 두고 UI에서 iframe으로 처리할 수 있음
                 isOffline: false,
                 status: 'normal',
                 isYoutube: true,
                 youtubeUrl: youtubeUrl
-            });
+            };
+
+            // 그리드 캠 목록 업데이트
+            setGridCams(prevGrid => prevGrid.map(c => c.id === targetCamId ? updatedCam8 : c));
+            setActiveCam(updatedCam8);
 
             // 첫 프레임 즉각 분석
             fetchAiData();
@@ -323,11 +328,15 @@ const App = () => {
                             <div
                                 key={cam.id}
                                 onClick={() => handleCamSwap(cam, index)}
-                                className={`relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary hover:shadow-lg transition-all ${cam.isOffline ? 'opacity-60 grayscale' : ''}`}
+                                className={`relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:ring-2 hover:ring-primary hover:shadow-lg transition-all ${cam.isOffline ? 'opacity-60 grayscale' : ''} ${cam.status === 'danger' ? 'ring-4 ring-danger shadow-[0_0_15px_rgba(239,68,68,0.5)] z-10' : cam.status === 'warning' ? 'ring-4 ring-warning z-10' : ''}`}
                             >
                                 {cam.isOffline ? (
                                     <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900">
                                         <span className="material-symbols-outlined text-slate-400">videocam_off</span>
+                                    </div>
+                                ) : cam.isYoutube ? (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900">
+                                        <span className="material-symbols-outlined text-red-500 text-4xl mb-2">youtube_activity</span>
                                     </div>
                                 ) : (
                                     <img className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt={cam.name} src={cam.src} />
