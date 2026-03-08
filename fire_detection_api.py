@@ -9,10 +9,6 @@ from collections import deque
 import time
 import yt_dlp
 import base64
-import os
-import json
-import threading
-from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -30,29 +26,9 @@ model_path = r'c:\Users\USER\Downloads\Fastapi_e-gleEye2\Fastapi_e-gleEye\resnet
 model = keras.models.load_model(model_path, custom_objects={'preprocess_input': preprocess_input}, safe_mode=False)
 
 # 상태 관리를 위한 변수 (메모리 유지)
-# 서버가 켜져 있는 동안 최근 10회 검사 결과를 저장 (Sliding Window 10)
-history = deque(maxlen=10)
+# 서버가 켜져 있는 동안 최근 8회 검사 결과를 저장
+history = deque(maxlen=8)
 ewma_prob = 0.0
-last_status_state = "NORMAL"
-
-def cleanup_temp_logs():
-    while True:
-        try:
-            if os.path.exists("temp_logs"):
-                now = time.time()
-                for filename in os.listdir("temp_logs"):
-                    filepath = os.path.join("temp_logs", filename)
-                    if os.path.isfile(filepath):
-                        # 86400 seconds = 24 hours
-                        if os.stat(filepath).st_mtime < now - 86400:
-                            os.remove(filepath)
-        except Exception as e:
-            print(f"Cleanup error: {e}")
-        time.sleep(3600)  # Check every hour
-
-# Start cleanup thread
-cleanup_thread = threading.Thread(target=cleanup_temp_logs, daemon=True)
-cleanup_thread.start()
 
 def resize_with_padding(image, target_size=(224, 224)):
     h, w = image.shape[:2]
@@ -98,42 +74,11 @@ def predict_and_gradcam(img_ready, img_input):
             
     return raw_prob, b64_str
 
-class FalsePositiveReport(BaseModel):
-    cam_id: str
-    gradcam_b64: str
-    probability: float
-    timestamp: str
-
-@app.post("/api/report_false_positive")
-async def report_false_positive(report: FalsePositiveReport):
-    os.makedirs("temp_logs", exist_ok=True)
-    base_name = f"temp_logs/{report.cam_id}_{report.timestamp.replace(':', '-')}_{int(time.time())}"
-    
-    try:
-        # Save image
-        img_data = base64.b64decode(report.gradcam_b64)
-        with open(f"{base_name}.jpg", "wb") as f:
-            f.write(img_data)
-        
-        # Save JSON
-        info = {
-            "cam_id": report.cam_id,
-            "probability": report.probability,
-            "timestamp": report.timestamp,
-            "reported_at": time.time()
-        }
-        with open(f"{base_name}.json", "w") as f:
-            json.dump(info, f)
-            
-        return {"status": "success", "message": "Saved false positive log"}
-    except Exception as e:
-        return {"error": str(e)}
-
 @app.get("/analyze")
 async def analyze_frame(video_url: str = Query(..., description="분석할 영상 URL"), 
                         time_param: float = Query(0.0, alias="time"), 
                         playing: bool = Query(True)):
-    global ewma_prob, last_status_state
+    global ewma_prob
     
     try:
         # 1. 영상 프레임 가져오기 (yt-dlp)
@@ -156,8 +101,8 @@ async def analyze_frame(video_url: str = Query(..., description="분석할 영�
 
         # 2. 민감도 설정
         FIRE_THRESHOLD = 0.20
-        EMERGENCY_COUNT = 8
-        EMERGENCY_EWMA = 0.80
+        EMERGENCY_COUNT = 2
+        EMERGENCY_EWMA = 0.30
         SAFE_EXIT_THRESHOLD = 0.05
 
         # 3. 모델 추론 및 Grad-CAM 생성
@@ -175,7 +120,7 @@ async def analyze_frame(video_url: str = Query(..., description="분석할 영�
         fire_count = history.count('fire')
 
         # 5. 최종 상태 판정
-        if (fire_count >= EMERGENCY_COUNT or ewma_prob >= EMERGENCY_EWMA) and raw_prob > SAFE_EXIT_THRESHOLD:
+        if (fire_count >= EMERGENCY_COUNT or ewma_prob > EMERGENCY_EWMA) and raw_prob > SAFE_EXIT_THRESHOLD:
             status = "!!! EMERGENCY: FIRE !!!"
             status_code = 2
         elif fire_count >= 1 or ewma_prob > 0.15:
@@ -185,14 +130,9 @@ async def analyze_frame(video_url: str = Query(..., description="분석할 영�
             status = "NORMAL"
             status_code = 0
 
-        is_status_changed = (status != last_status_state)
-        if is_status_changed:
-            last_status_state = status
-
         return {
             "status": status,
             "status_code": status_code,
-            "is_status_changed": is_status_changed,
             "probability": round(raw_prob, 4),
             "ewma": round(ewma_prob, 4),
             "fire_count": fire_count,
