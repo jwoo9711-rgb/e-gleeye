@@ -35,9 +35,11 @@ const App = () => {
         probability: 0,
         ewma: 0,
         fireCount: 0,
-        status: 'NORMAL'
+        status: 'NORMAL',
+        raw_gradcam_b64: ''
     });
-    const [logData, setLogData] = useState([]);
+    const [logData, setLogData] = useState([]);      // CSV용 데이터
+    const [displayLogs, setDisplayLogs] = useState([]); // 화면 표시용 이벤트 로그
 
     const aiIntervalRef = useRef(null);
     const playStartTimeRef = useRef(null);
@@ -45,6 +47,13 @@ const App = () => {
     useEffect(() => {
         youtubeUrlRef.current = youtubeUrl;
     }, [youtubeUrl]);
+
+    // 알람 중지 함수
+    const stopAlarm = () => {
+        setShowModal(false);
+        setShowToast(false);
+        // 추가: 실제 오디오 객체가 있다면 이곳에서 pause() 호출
+    };
 
     useEffect(() => {
         if (isDark) {
@@ -98,20 +107,39 @@ const App = () => {
         setShowToast(false);
     };
 
+    // 오탐지 신고 로직
+    const handleFalsePositive = async (camId) => {
+        const timestamp = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+        
+        setDisplayLogs(prev => [{
+            id: Date.now(),
+            time: timestamp,
+            title: `[${camId}] 관제사 오탐지 신고`,
+            desc: "AI 모델 재학습 데이터(Grad-CAM) 백업 완료",
+            type: "action"
+        }, ...prev].slice(0, 50));
+
+        try {
+            await fetch('http://localhost:8000/api/report_false_positive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cam_id: camId,
+                    gradcam_b64: aiData.raw_gradcam_b64 || "",
+                    probability: aiData.probability,
+                    timestamp: timestamp
+                })
+            });
+        } catch (e) {
+            console.error("오탐지 전송 실패:", e);
+        }
+        
+        stopAlarm();
+    };
+
     // 긴급 알림 해제 처리 로직
     const handleClearAlert = () => {
-        const updatedGrid = gridCams.map(cam =>
-            cam.id === 'CAM-08' ? { ...cam, status: 'normal' } : cam
-        );
-        setGridCams(updatedGrid);
-
-        if (activeCam.id === 'CAM-08') {
-            const updatedAlertCam = { ...activeCam, status: 'normal' };
-            setActiveCam(updatedAlertCam);
-        }
-
-        setShowModal(false);
-        setShowToast(false);
+        stopAlarm();
     };
 
     // --- Python FastAPI 연동 로직 시작 ---
@@ -139,16 +167,19 @@ const App = () => {
                 const confidencePercent = Math.round(probability * 100);
                 const backendStatus = data.status; // "!!! EMERGENCY: FIRE !!!", "WARNING: CHECKING...", "NORMAL"
 
-                setAiData({
+                setAiData(prev => ({
+                    ...prev,
                     probability: confidencePercent,
                     ewma: Math.round(parseFloat(data.ewma || 0) * 100),
                     fireCount: data.fire_count || 0,
                     status: backendStatus,
                     status_code: data.status_code || 0,
                     timestamp: data.timestamp || new Date().toLocaleTimeString(),
-                    history: data.history || []
-                });
+                    history: data.history || [],
+                    raw_gradcam_b64: data.gradcam_b64 || ""
+                }));
 
+                // CSV용 데이터 축적 (전체)
                 setLogData(prev => [...prev, {
                     timestamp: data.timestamp || new Date().toLocaleTimeString(),
                     status: backendStatus,
@@ -156,6 +187,35 @@ const App = () => {
                     fireCount: data.fire_count || 0,
                     ewma: Math.round(parseFloat(data.ewma || 0) * 100)
                 }]);
+
+                // 상태 변경 시에만 화면용 이벤트 로그 생성 (Data from Python's is_status_changed)
+                if (data.is_status_changed) {
+                    let logType = "normal";
+                    let titleStr = "정상 상태 유지";
+                    let descStr = "위험 요소 없음";
+
+                    if (backendStatus.includes('EMERGENCY')) {
+                        logType = "danger";
+                        titleStr = `화재 감지 (신뢰도: ${confidencePercent}%)`;
+                        descStr = "즉각적인 확인 요망";
+                    } else if (backendStatus.includes('WARNING')) {
+                        logType = "warning";
+                        titleStr = `위험 감지 (신뢰도: ${confidencePercent}%)`;
+                        descStr = "주의 관찰 필요";
+                    } else {
+                        logType = "normal";
+                        titleStr = "상황 종료";
+                        descStr = "안전 상태로 복구됨";
+                    }
+
+                    setDisplayLogs(prev => [{
+                        id: Date.now(),
+                        time: data.timestamp || new Date().toLocaleTimeString(),
+                        title: titleStr,
+                        desc: descStr,
+                        type: logType
+                    }, ...prev].slice(0, 50));
+                }
 
                 // 확률/상태에 따른 UI 동작
                 let newStatus = 'normal';
@@ -356,14 +416,24 @@ const App = () => {
                                 <span className="material-symbols-outlined text-slate-400 text-6xl">videocam_off</span>
                             </div>
                         ) : activeCam.isYoutube ? (
-                            <iframe
-                                className="w-full h-full object-cover opacity-90 transition-all pointer-events-none"
-                                src={`https://www.youtube.com/embed/${activeCam.youtubeUrl.split('v=')[1]?.split('&')[0] || ''}?autoplay=1&mute=1&controls=0&loop=1`}
-                                title="YouTube video player"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
+                            <div className="w-full h-full relative pointer-events-none">
+                                <iframe
+                                    className="w-full h-full object-cover opacity-90 transition-all pointer-events-none"
+                                    src={`https://www.youtube.com/embed/${activeCam.youtubeUrl.split('v=')[1]?.split('&')[0] || ''}?autoplay=1&mute=1&controls=0&loop=1`}
+                                    title="YouTube video player"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                                {/* 화재 탐지 박스 (Bounding Box) - Azure ML 디자인 가이드 엄수 */}
+                                {(activeCam.status === 'danger' || activeCam.status === 'warning') && !activeCam.isOffline && isAiRunning && (
+                                    <div className={`absolute top-[20%] left-[25%] w-[50%] h-[60%] border-2 rounded-none pointer-events-none z-30 flex flex-col items-start justify-start ${activeCam.status === 'danger' ? 'border-[#EF4444] animate-pulse' : 'border-[#FF9800] animate-pulse'}`}>
+                                        <div className={`px-2 py-0.5 text-white text-[10px] font-bold whitespace-nowrap ${activeCam.status === 'danger' ? 'bg-[#EF4444]' : 'bg-[#FF9800]'}`}>
+                                            {activeCam.status === 'danger' ? `FIRE DETECTED ${aiData.probability}%` : `WARNING ${aiData.probability}%`}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         ) : (
                             <img className="w-full h-full object-cover opacity-90 transition-all" alt="Active Feed" src={activeCam.src} />
                         )}
@@ -460,20 +530,20 @@ const App = () => {
                         {/* Window Frame Analysis */}
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">8프레임 윈도우 분석</p>
-                                <p className={`text-[10px] font-bold ${aiData.history?.includes('fire') ? 'text-danger' : 'text-primary'}`}>
-                                    {aiData.history?.includes('fire') ? 'DETECTED' : 'ALL CLEAR'}
+                                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">10프레임 윈도우 분석</p>
+                                <p className={`text-[10px] font-bold ${aiData.status.includes('EMERGENCY') ? 'text-[#EF4444]' : 'text-primary'}`}>
+                                    {aiData.status.includes('EMERGENCY') ? 'HAZARD DETECTED' : 'ALL CLEAR'}
                                 </p>
                             </div>
                             <div className="flex gap-1.5 h-8">
-                                {Array.from({ length: 8 }).map((_, idx) => {
+                                {Array.from({ length: 10 }).map((_, idx) => {
                                     const historyList = aiData.history || [];
                                     const item = historyList[idx];
                                     const hasData = item !== undefined;
                                     const isFire = item === 'fire';
 
                                     return (
-                                        <div key={idx} className={`flex-1 rounded-sm opacity-80 transition-colors duration-300 ${!isAiRunning ? 'bg-slate-200 dark:bg-slate-700' : (hasData ? (isFire ? 'bg-danger shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-success') : 'bg-slate-200 dark:bg-slate-700')}`}></div>
+                                        <div key={idx} className={`flex-1 rounded-sm opacity-80 transition-colors duration-300 ${!isAiRunning ? 'bg-slate-200 dark:bg-slate-700' : (hasData ? (isFire ? 'bg-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-[#16A34A]') : 'bg-slate-200 dark:bg-slate-700')}`}></div>
                                     );
                                 })}
                             </div>
@@ -544,18 +614,38 @@ const App = () => {
                             <button className="text-[10px] text-slate-500 hover:text-primary underline">더보기</button>
                         </div>
                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px]">
-                            {toastMessages.length === 0 ? (
+                            {displayLogs.length === 0 ? (
                                 <div className="text-center text-xs text-slate-400 py-4">새로운 이벤트가 없습니다.</div>
                             ) : (
-                                toastMessages.slice(0, 5).map((log, i) => (
-                                    <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-danger/5 border-l-2 border-danger">
-                                        <span className="text-[10px] font-mono text-danger font-bold mt-0.5">[{new Date().toLocaleTimeString('ko-KR', { hour12: false })}]</span>
-                                        <div>
-                                            <p className="text-xs font-bold text-danger">{log.title}</p>
-                                            <p className="text-[10px] text-slate-500">{log.desc}</p>
+                                displayLogs.map((log) => {
+                                    // 색상 매핑
+                                    let textColor = "text-[#16A34A]";
+                                    let bgColor = "bg-[#16A34A]/10 border-[#16A34A]";
+                                    if (log.type === "danger") {
+                                        textColor = "text-[#EF4444]";
+                                        bgColor = "bg-[#EF4444]/10 border-[#EF4444]";
+                                    } else if (log.type === "warning") {
+                                        textColor = "text-[#CA8A04]";
+                                        bgColor = "bg-[#CA8A04]/10 border-[#CA8A04]";
+                                    } else if (log.type === "action") {
+                                        textColor = "text-[#2563EB]";
+                                        bgColor = "bg-[#2563EB]/10 border-[#2563EB]";
+                                    }
+
+                                    return (
+                                        <div key={log.id} className={`flex items-start gap-3 p-3 rounded-lg border-l-4 shadow-sm ${bgColor} transition-all`}>
+                                            <span className={`text-[10px] font-mono font-bold mt-0.5 whitespace-nowrap ${textColor}`}>
+                                                [{log.time}]
+                                            </span>
+                                            <div>
+                                                <p className={`text-[12px] font-bold ${textColor}`}>
+                                                    {log.title}
+                                                </p>
+                                                <p className="text-[10px] text-slate-500">{log.desc}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>
@@ -564,25 +654,20 @@ const App = () => {
 
             {/* Bottom-right Toast Alert */}
             {showToast && toastMessages.length > 0 && (
-                <div className="fixed bottom-6 right-6 z-[90] bg-white dark:bg-slate-800 border-l-4 border-danger rounded-xl shadow-2xl p-4 w-80 animate-bounce cursor-pointer"
+                <div className="fixed bottom-6 right-6 z-[90] bg-[#EF4444] text-white rounded-xl shadow-[0_10px_40px_rgba(239,68,68,0.5)] p-5 w-80 animate-bounce cursor-pointer border-2 border-white/20"
                     onClick={() => setShowModal(true)}>
                     <div className="flex items-start justify-between gap-3">
-                        <div className={`flex items-center justify-center size-8 rounded-full ${toastMessages[0].iconColor || 'bg-danger/10 text-danger'}`}>
-                            <span className="material-symbols-outlined">{toastMessages[0].icon || 'local_fire_department'}</span>
+                        <div className={`flex items-center justify-center size-10 rounded-full bg-white/20`}>
+                            <span className="material-symbols-outlined text-3xl">{toastMessages[0].icon || 'local_fire_department'}</span>
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">{toastMessages[0].title}</h4>
-                            <p className="text-xs text-slate-500">{toastMessages[0].desc}</p>
+                            <h4 className="text-[16px] font-black">{toastMessages[0].title}</h4>
+                            <p className="text-[12px] opacity-90">{toastMessages[0].desc}</p>
                         </div>
-                        <button className="text-slate-400 hover:text-danger" onClick={(e) => { e.stopPropagation(); setShowToast(false); }}>
+                        <button className="text-white hover:text-slate-200" onClick={(e) => { e.stopPropagation(); setShowToast(false); }}>
                             <span className="material-symbols-outlined text-sm">close</span>
                         </button>
                     </div>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setShowModal(true); setShowToast(false); }}
-                        className="w-full mt-3 py-2 bg-danger/10 hover:bg-danger text-danger hover:text-white text-xs font-bold rounded flex items-center justify-center gap-1 transition-colors">
-                        상세 확인하기 <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </button>
                 </div>
             )}
 
@@ -657,12 +742,13 @@ const App = () => {
                             </div>
 
                             <div className="mt-8 flex gap-4">
-                                <button onClick={handleEmergencySwap} className="flex-[2] py-5 bg-danger hover:bg-red-600 text-white rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(239,68,68,0.4)] transition-all active:scale-[0.97] hover:-translate-y-1">
+                                <button onClick={handleEmergencySwap} className="flex-[2] py-5 bg-[#EF4444] hover:bg-red-600 text-white rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(239,68,68,0.4)] transition-all active:scale-[0.97] hover:-translate-y-1">
                                     <span className="material-symbols-outlined text-3xl">fullscreen</span>
-                                    현장 상황 즉시 관제
+                                    현장 확인 및 메인 뷰 전환
                                 </button>
-                                <button onClick={() => setShowModal(false)} className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl font-bold text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700">
-                                    무시하기
+                                <button onClick={() => { handleFalsePositive('CAM-08'); }} className="flex-[1.5] py-5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(37,99,235,0.4)] transition-all active:scale-[0.97] hover:-translate-y-1">
+                                    <span className="material-symbols-outlined text-2xl">report</span>
+                                    오탐지 신고
                                 </button>
                             </div>
                         </div>
